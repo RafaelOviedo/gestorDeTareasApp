@@ -1,13 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../styles';
 
-export default function DemoNotice() {
+export default function TasksPreviewNotice() {
   return (
     <View style={styles.notice}>
-      <Text style={styles.title}>Vista previa</Text>
+      <Text style={styles.title}>Vista previa de tareas</Text>
       <Text style={styles.text}>
-        Podés recorrer las pantallas. Las cuentas, el guardado de tareas y los
-        recordatorios todavía no están habilitados.
+        El guardado de tareas y los recordatorios todavía no están habilitados.
       </Text>
     </View>
   );
