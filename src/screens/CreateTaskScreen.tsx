@@ -1,25 +1,53 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import AppButton from '../components/AppButton';
-import TasksPreviewNotice from '../components/TasksPreviewNotice';
+import ReminderNotice from '../components/ReminderNotice';
+import FormMessage from '../components/FormMessage';
+import { useAuth } from '../context/AuthContext';
+import { addTask } from '../services/tasks';
+import { MAX_TASK_TITLE_LENGTH, reminderOptions } from '../utils/tasks';
 import FormField from '../components/FormField';
 import Screen from '../components/Screen';
 import { colors, styles } from '../styles';
 
-const reminderOptions = [
-  { label: 'Sin recordatorio', seconds: 0 },
-  { label: '30 segundos', seconds: 30 },
-  { label: '1 minuto', seconds: 60 },
-  { label: '5 minutos', seconds: 300 },
-];
-
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateTask'>;
 
 export default function CreateTaskScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [reminderSeconds, setReminderSeconds] = useState(0);
+
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const saving = useRef(false);
+
+  async function handleSave() {
+    if (saving.current) {
+      return;
+    }
+    if (!user) {
+      setError('Iniciá sesión para guardar una tarea.');
+      return;
+    }
+    saving.current = true;
+    setIsSaving(true);
+    setError(null);
+    try {
+      await addTask(user.id, { title, reminderSeconds });
+      if (navigation.isFocused()) {
+        navigation.goBack();
+      }
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'No se pudo guardar la tarea.',
+      );
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
+    }
+  }
 
   return (
     <Screen>
@@ -27,14 +55,15 @@ export default function CreateTaskScreen({ navigation }: Props) {
       <Text style={styles.subtitle}>
         Dale un título a tu tarea y elegí cuándo querés recordarla.
       </Text>
-      <TasksPreviewNotice />
+      <ReminderNotice />
       <View style={styles.card}>
         <FormField
           label="Título de la tarea"
           placeholder="Por ejemplo: repasar para el parcial"
           value={title}
           onChangeText={setTitle}
-          maxLength={120}
+          maxLength={MAX_TASK_TITLE_LENGTH}
+          editable={!isSaving}
           autoCapitalize="sentences"
         />
         <Text style={styles.label}>Recordatorio</Text>
@@ -45,8 +74,10 @@ export default function CreateTaskScreen({ navigation }: Props) {
               accessibilityRole="radio"
               accessibilityState={{
                 checked: reminderSeconds === option.seconds,
+                disabled: isSaving,
               }}
               onPress={() => setReminderSeconds(option.seconds)}
+              disabled={isSaving}
               style={[
                 localStyles.option,
                 reminderSeconds === option.seconds && localStyles.selected,
@@ -65,12 +96,18 @@ export default function CreateTaskScreen({ navigation }: Props) {
           ))}
         </View>
         <Text style={styles.hint}>
-          En esta vista previa no se programan notificaciones.
+          El plazo del recordatorio se calcula al guardar la tarea.
         </Text>
-        <AppButton title="Guardar tarea" disabled />
+        <FormMessage message={error} />
+        <AppButton
+          title={isSaving ? 'Guardando…' : 'Guardar tarea'}
+          onPress={handleSave}
+          disabled={isSaving}
+        />
       </View>
       <Button
         title="Cancelar"
+        disabled={isSaving}
         onPress={() => navigation.goBack()}
         color={colors.primary}
       />
