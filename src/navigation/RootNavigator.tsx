@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -22,9 +22,7 @@ const theme = {
 };
 
 export default function RootNavigator() {
-  // Acceso temporal para revisar las pantallas. No representa una sesión autenticada.
-  // En el punto 4 se reemplazará por el estado de AuthContext.
-  const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <NavigationContainer theme={theme}>
@@ -35,16 +33,13 @@ export default function RootNavigator() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        {isDemoOpen ? (
-          <Stack.Group navigationKey="demo">
-            <Stack.Screen name="Home" options={{ title: 'Mis tareas' }}>
-              {props => (
-                <HomeScreen
-                  {...props}
-                  onExitDemo={() => setIsDemoOpen(false)}
-                />
-              )}
-            </Stack.Screen>
+        {user ? (
+          <Stack.Group navigationKey={user.id}>
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
+              options={{ title: 'Mis tareas' }}
+            />
             <Stack.Screen
               name="CreateTask"
               component={CreateTaskScreen}
@@ -53,14 +48,11 @@ export default function RootNavigator() {
           </Stack.Group>
         ) : (
           <Stack.Group navigationKey="guest">
-            <Stack.Screen name="Login" options={{ title: 'Gestor de Tareas' }}>
-              {props => (
-                <LoginScreen
-                  {...props}
-                  onEnterDemo={() => setIsDemoOpen(true)}
-                />
-              )}
-            </Stack.Screen>
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
+              options={{ title: 'Gestor de Tareas' }}
+            />
             <Stack.Screen
               name="Register"
               component={RegisterScreen}
