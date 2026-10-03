@@ -1,5 +1,5 @@
 export type RootStackParamList = {
-  Login: undefined;
+  Login: { registeredUsername?: string } | undefined;
   Register: undefined;
   Home: undefined;
   CreateTask: undefined;
