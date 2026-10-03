@@ -63,7 +63,7 @@ test('registra una cuenta, vuelve a Login y solo permite acceder con la contrase
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), 'Repasar');
   fireEvent.press(screen.getByRole('radio', { name: '30 segundos' }));
   expect(screen.getByRole('radio', { name: '30 segundos' })).toBeChecked();
-  expect(screen.getByRole('button', { name: 'Guardar tarea' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Guardar tarea' })).toBeEnabled();
   await press('Cancelar');
   await press('Cerrar sesión');
   expect(screen.getByText('Todo en un lugar.')).toBeVisible();
