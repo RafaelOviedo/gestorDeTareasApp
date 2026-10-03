@@ -3,7 +3,7 @@ import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import AppButton from '../components/AppButton';
-import DemoNotice from '../components/DemoNotice';
+import TasksPreviewNotice from '../components/TasksPreviewNotice';
 import FormField from '../components/FormField';
 import Screen from '../components/Screen';
 import { colors, styles } from '../styles';
@@ -27,7 +27,7 @@ export default function CreateTaskScreen({ navigation }: Props) {
       <Text style={styles.subtitle}>
         Dale un título a tu tarea y elegí cuándo querés recordarla.
       </Text>
-      <DemoNotice />
+      <TasksPreviewNotice />
       <View style={styles.card}>
         <FormField
           label="Título de la tarea"
