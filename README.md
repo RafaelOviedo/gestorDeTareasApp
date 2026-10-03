@@ -13,19 +13,29 @@
 | `src/types/`      | Tipos de TypeScript compartidos.                           |
 | `__tests__/`      | Tests automatizados.                                       |
 
-Las carpetas pendientes de implementar contienen un archivo `.gitkeep` para conservarlas en Git. Se reemplazará al agregar el primer archivo de código. La navegación ya está implementada. La autenticación, persistencia y notificaciones se implementarán en las próximas etapas.
+Las carpetas pendientes de implementar contienen un archivo `.gitkeep` para conservarlas en Git. Se reemplazará al agregar el primer archivo de código. La navegación y autenticación local ya están implementadas. La persistencia de tareas y las notificaciones se implementarán en las próximas etapas.
 
-## Navegación (punto 3)
+## Navegación y autenticación (puntos 3 y 4)
 
-Se usa React Navigation 7 con Native Stack y rutas tipadas en `src/types/navigation.ts`.
+Se usa React Navigation 7 con Native Stack. `AuthProvider` mantiene la sesión en memoria; las pantallas privadas solo existen cuando `user` tiene una identidad validada.
 
-- Login → Registro → volver a Login.
-- Login → **Explorar demo** → Home → Crear tarea → cancelar o usar Atrás.
-- **Salir de la demo** elimina el grupo de pantallas Home/Crear tarea y vuelve a Login.
+- Login → Registro → guardar cuenta → Login con el usuario completado.
+- Login con credenciales correctas → Home → Crear tarea → cancelar o usar Atrás.
+- **Cerrar sesión** desmonta Home/Crear tarea y vuelve a Login sin historial privado.
+- Al cerrar completamente y volver a abrir la app, se solicita iniciar sesión nuevamente. Las cuentas siguen guardadas.
 
-El modo demo es temporal y no representa autenticación. Los formularios conservan datos solamente mientras están montados; iniciar sesión, crear cuentas y guardar tareas están deshabilitados. Elegir un recordatorio no programa una notificación. En el punto 4, AuthContext reemplazará el acceso de demo.
+Las cuentas se guardan en AsyncStorage bajo `@gestorDeTareas/users:v1`. Se permiten varios usuarios. Los nombres se comparan ignorando mayúsculas y espacios al inicio/final; las contraseñas se comparan exactamente. No se permiten campos vacíos ni usuarios duplicados. Los errores de lectura/escritura se muestran en el formulario y no se borran cuentas si los datos guardados están dañados.
 
-`Screen`, `FormField`, `AppButton` y `DemoNotice` son componentes reutilizables. Los colores y estilos compartidos están en `src/styles.ts`.
+El almacenamiento de contraseñas en texto plano es parte de la autenticación local educativa permitida por la consigna. La sesión y los parámetros de navegación no incluyen contraseñas. No se guarda una sesión persistente ni se utiliza un backend.
+
+- `src/services/auth.ts`: registro, validación de credenciales almacenadas y acceso a AsyncStorage.
+- `src/context/AuthContext.tsx`: usuario activo, inicio y cierre de sesión.
+- `src/utils/validations.ts`: validaciones de campos y normalización del usuario.
+- `src/types/user.ts`: cuenta almacenada e identidad de sesión.
+
+Se eliminó el acceso de demo. El guardado de tareas y los recordatorios siguen deshabilitados hasta los puntos 5 y 6. `TasksPreviewNotice` informa esa limitación dentro de las pantallas de tareas.
+
+`Screen`, `FormField`, `FormMessage`, `AppButton` y `TasksPreviewNotice` son componentes reutilizables. Los colores y estilos compartidos están en `src/styles.ts`.
 
 ### Ejecutar y verificar
 
@@ -36,7 +46,7 @@ npm start
 # En otra terminal, con el simulador de iPhone abierto:
 npm run ios
 
-# Tests de navegación y del botón reutilizable:
+# Tests de autenticación, validaciones, navegación y componentes:
 npm test
 ```
 
@@ -50,4 +60,4 @@ bundle exec pod install
 cd ..
 ```
 
-Los tests usan el navegador real y simulan el contexto de áreas seguras del dispositivo. La validación de credenciales y la lógica de tareas se agregarán junto con sus funcionalidades.
+Los tests usan el navegador real y simulan AsyncStorage y las áreas seguras del dispositivo. Cubren registro/login, cierre de sesión, errores y reintentos, duplicados, validaciones y conservación de las cuentas al remontar App. El cierre y reapertura reales deben comprobarse en el dispositivo tras compilar. La lógica de tareas se agregará en el punto 5.
