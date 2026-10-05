@@ -20,6 +20,13 @@ export default function TaskItem({
   disabled = false,
   isDeleting = false,
 }: Props) {
+  const reminderStatus = task.completed
+    ? 'Recordatorio cancelado'
+    : task.notificationId
+    ? 'Notificación solicitada para esa fecha'
+    : task.reminderAt && Date.parse(task.reminderAt) <= Date.now()
+    ? 'Fecha vencida; sin nuevo aviso'
+    : 'Sin notificación programada';
   const busy = isDeleting || isUpdating;
   return (
     <View style={styles.card}>
@@ -34,8 +41,8 @@ export default function TaskItem({
           ? `Recordatorio: ${formatReminderDate(task.reminderAt)}`
           : 'Sin recordatorio'}
       </Text>
-      {task.reminderAt && !task.notificationId ? (
-        <Text style={styles.detail}>Sin notificación programada</Text>
+      {task.reminderAt ? (
+        <Text style={styles.detail}>{reminderStatus}</Text>
       ) : null}
       <TouchableOpacity
         accessibilityRole="button"

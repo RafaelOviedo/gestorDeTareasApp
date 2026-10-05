@@ -1,13 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../styles';
+import { StyleSheet, Text, View } from "react-native";
+import { colors } from "../styles";
 
 export default function ReminderNotice() {
   return (
     <View style={styles.notice}>
-      <Text style={styles.title}>Recordatorios sin notificaciones</Text>
+      <Text style={styles.title}>Recordatorios locales</Text>
       <Text style={styles.text}>
-        Podés guardar la fecha del recordatorio. Por ahora, la app no envía
-        avisos.
+        Al guardar con recordatorio, te pediremos permiso para enviar notificaciones.
       </Text>
     </View>
   );
@@ -22,7 +21,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.primary,
     marginBottom: 4,
   },
