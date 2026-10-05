@@ -3,6 +3,8 @@ import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import AppButton from '../components/AppButton';
+import ReminderPermissionHelp from '../components/ReminderPermissionHelp';
+import { ReminderPermissionError } from '../services/notifications';
 import ReminderNotice from '../components/ReminderNotice';
 import FormMessage from '../components/FormMessage';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +21,8 @@ export default function CreateTaskScreen({ navigation }: Props) {
   const [title, setTitle] = useState('');
   const [reminderSeconds, setReminderSeconds] = useState(0);
 
+  const [permissionError, setPermissionError] =
+    useState<ReminderPermissionError | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const saving = useRef(false);
@@ -34,12 +38,16 @@ export default function CreateTaskScreen({ navigation }: Props) {
     saving.current = true;
     setIsSaving(true);
     setError(null);
+    setPermissionError(null);
     try {
       await addTask(user.id, { title, reminderSeconds });
       if (navigation.isFocused()) {
         navigation.goBack();
       }
     } catch (cause) {
+      setPermissionError(
+        cause instanceof ReminderPermissionError ? cause : null,
+      );
       setError(
         cause instanceof Error ? cause.message : 'No se pudo guardar la tarea.',
       );
@@ -96,9 +104,10 @@ export default function CreateTaskScreen({ navigation }: Props) {
           ))}
         </View>
         <Text style={styles.hint}>
-          El plazo del recordatorio se calcula al guardar la tarea.
+          El plazo comienza después de aceptar los permisos y guardar la tarea.
         </Text>
         <FormMessage message={error} />
+        <ReminderPermissionHelp error={permissionError} disabled={isSaving} />
         <AppButton
           title={isSaving ? 'Guardando…' : 'Guardar tarea'}
           onPress={handleSave}

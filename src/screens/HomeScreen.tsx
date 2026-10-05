@@ -16,6 +16,8 @@ import { useAuth } from '../context/AuthContext';
 import { deleteTask, getTasks, setTaskCompleted } from '../services/tasks';
 import AppButton from '../components/AppButton';
 import FormMessage from '../components/FormMessage';
+import ReminderPermissionHelp from '../components/ReminderPermissionHelp';
+import { ReminderPermissionError } from '../services/notifications';
 import TaskItem from '../components/TaskItem';
 import { colors, styles } from '../styles';
 
@@ -27,6 +29,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [permissionError, setPermissionError] =
+    useState<ReminderPermissionError | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const mutating = useRef(false);
@@ -90,11 +94,15 @@ export default function HomeScreen({ navigation }: Props) {
     mutating.current = true;
     setDeletingId(task.id);
     setActionError(null);
+    setPermissionError(null);
     try {
       await deleteTask(userId, task.id);
       // La lista cambia solo después de confirmar el guardado en AsyncStorage.
       setTasks(current => current.filter(item => item.id !== task.id));
     } catch (cause) {
+      setPermissionError(
+        cause instanceof ReminderPermissionError ? cause : null,
+      );
       setActionError(
         cause instanceof Error
           ? cause.message
@@ -113,12 +121,16 @@ export default function HomeScreen({ navigation }: Props) {
     mutating.current = true;
     setUpdatingId(task.id);
     setActionError(null);
+    setPermissionError(null);
     try {
       const updated = await setTaskCompleted(userId, task.id, !task.completed);
       setTasks(current =>
         current.map(item => (item.id === updated.id ? updated : item)),
       );
     } catch (cause) {
+      setPermissionError(
+        cause instanceof ReminderPermissionError ? cause : null,
+      );
       setActionError(
         cause instanceof Error
           ? cause.message
@@ -167,6 +179,10 @@ export default function HomeScreen({ navigation }: Props) {
               disabled={isLoading || isMutating}
             />
             <FormMessage message={actionError} />
+            <ReminderPermissionHelp
+              error={permissionError}
+              disabled={isMutating}
+            />
             <FormMessage message={loadError} />
             {loadError ? (
               <AppButton
