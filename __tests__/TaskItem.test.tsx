@@ -40,7 +40,7 @@ test('muestra la tarea y responde a eliminar sin permitir dobles pulsaciones cua
 });
 
 test('muestra la fecha guardada sin prometer una notificación programada', () => {
-  const reminderAt = '2026-10-03T15:01:00.000Z';
+  const reminderAt = new Date(Date.now() + 60000).toISOString();
   render(
     <TaskItem
       onToggleCompleted={jest.fn()}

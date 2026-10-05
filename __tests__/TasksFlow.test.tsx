@@ -1,3 +1,4 @@
+import notifee, { AuthorizationStatus } from '@notifee/react-native';
 import { Alert } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -49,7 +50,9 @@ test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuari
   fireEvent.press(screen.getByRole('radio', { name: '1 minuto' }));
   await press('Guardar tarea');
   expect(screen.getByText('Repasar')).toBeVisible();
-  expect(screen.getByText('Sin notificación programada')).toBeVisible();
+  expect(
+    screen.getByText('Notificación solicitada para esa fecha'),
+  ).toBeVisible();
   app.unmount();
   render(<App />);
   await login();
@@ -233,4 +236,31 @@ test('si falla completar conserva el estado visible y permite reintentar', async
   expect((await getTasks('user:ana'))[0].completed).toBe(false);
   await press('Completar tarea: Repasar');
   expect(screen.getByText('Completada')).toBeVisible();
+});
+
+test('ofrece 10 segundos y permite guardar sin recordatorio después de rechazar el permiso', async () => {
+  render(<App />);
+  await login();
+  await press('Crear tarea');
+  fireEvent.changeText(screen.getByLabelText('Título de la tarea'), 'Demo');
+  fireEvent.press(screen.getByRole('radio', { name: '10 segundos' }));
+  const settings = await notifee.getNotificationSettings();
+  jest
+    .mocked(notifee.requestPermission)
+    .mockResolvedValueOnce({
+      ...settings,
+      authorizationStatus: AuthorizationStatus.DENIED,
+    });
+  await press('Guardar tarea');
+  expect(
+    screen.getByRole('button', { name: 'Abrir ajustes de notificaciones' }),
+  ).toBeVisible();
+  expect(screen.getByLabelText('Título de la tarea')).toHaveDisplayValue(
+    'Demo',
+  );
+  expect(await getTasks('user:ana')).toEqual([]);
+  fireEvent.press(screen.getByRole('radio', { name: 'Sin recordatorio' }));
+  await press('Guardar tarea');
+  expect(screen.getByText('Demo')).toBeVisible();
+  expect((await getTasks('user:ana'))[0].notificationId).toBeNull();
 });

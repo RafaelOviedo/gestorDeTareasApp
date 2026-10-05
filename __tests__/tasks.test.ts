@@ -30,7 +30,7 @@ test('guarda el título limpio y todos los datos, y los vuelve a leer del almace
     completed: false,
     createdAt: '2026-10-03T15:00:00.000Z',
     reminderAt: '2026-10-03T15:01:00.000Z',
-    notificationId: null,
+    notificationId: expect.any(String),
   });
   expect(task.id).not.toBe('');
   expect(
