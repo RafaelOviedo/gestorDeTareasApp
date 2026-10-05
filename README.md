@@ -24,7 +24,7 @@ Se usa React Navigation 7 con Native Stack. `AuthProvider` mantiene la sesión e
 - **Cerrar sesión** desmonta Home/Crear tarea y vuelve a Login sin historial privado.
 - Al cerrar completamente y volver a abrir la app, se solicita iniciar sesión nuevamente. Las cuentas siguen guardadas.
 
-Las cuentas se guardan en AsyncStorage bajo `@gestorDeTareas/users:v1`. Se permiten varios usuarios. Los nombres se comparan ignorando mayúsculas y espacios al inicio/final; las contraseñas se comparan exactamente. No se permiten campos vacíos ni usuarios duplicados. Los errores de lectura/escritura se muestran en el formulario y no se borran cuentas si los datos guardados están dañados.
+Las cuentas se guardan en AsyncStorage bajo `users`. Se usa únicamente esta clave, sin migración ni respaldo en otra clave. Se permiten varios usuarios. Los nombres se comparan ignorando mayúsculas y espacios al inicio/final; las contraseñas se comparan exactamente. No se permiten campos vacíos ni usuarios duplicados. Los errores de lectura/escritura se muestran en el formulario y no se borran cuentas si los datos guardados están dañados.
 
 El almacenamiento de contraseñas en texto plano es parte de la autenticación local educativa permitida por la consigna. La sesión y los parámetros de navegación no incluyen contraseñas. No se guarda una sesión persistente ni se utiliza un backend.
 

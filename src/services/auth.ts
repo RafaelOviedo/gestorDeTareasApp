@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { StoredUser, User } from '../types/user';
 import { normalizeUsername, validateCredentials } from '../utils/validations';
 
-export const USERS_STORAGE_KEY = '@gestorDeTareas/users:v1';
+export const USERS_STORAGE_KEY = 'users';
 
 function isStoredUser(value: unknown): value is StoredUser {
   if (typeof value !== 'object' || value === null) {
