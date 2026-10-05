@@ -3,6 +3,7 @@ import type { TaskDraft } from '../types/task';
 export const MAX_TASK_TITLE_LENGTH = 120;
 export const reminderOptions = [
   { label: 'Sin recordatorio', seconds: 0 },
+  { label: '10 segundos', seconds: 10 },
   { label: '30 segundos', seconds: 30 },
   { label: '1 minuto', seconds: 60 },
   { label: '5 minutos', seconds: 300 },
@@ -30,5 +31,6 @@ export function formatReminderDate(value: string): string {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
   });
 }
