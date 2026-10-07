@@ -35,7 +35,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const mutating = useRef(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const isMutating = deletingId !== null || updatingId !== null;
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const isMutating = deletingId !== null || updatingId !== null || isSigningOut;
   const completedCount = tasks.filter(task => task.completed).length;
   const pendingCount = tasks.length - completedCount;
 
@@ -142,6 +143,26 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }
 
+  async function handleSignOut() {
+    if (mutating.current) {
+      return;
+    }
+    mutating.current = true;
+    setIsSigningOut(true);
+    setActionError(null);
+    setPermissionError(null);
+    try {
+      await signOut();
+    } catch (cause) {
+      setActionError(
+        cause instanceof Error ? cause.message : 'No se pudo cerrar la sesión.',
+      );
+    } finally {
+      mutating.current = false;
+      setIsSigningOut(false);
+    }
+  }
+
   function confirmDelete(task: Task) {
     Alert.alert('Eliminar tarea', `¿Querés eliminar «${task.title}»?`, [
       { text: 'Cancelar', style: 'cancel' },
@@ -231,9 +252,9 @@ export default function HomeScreen({ navigation }: Props) {
         }
         ListFooterComponent={
           <AppButton
-            title="Cerrar sesión"
+            title={isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
             variant="secondary"
-            onPress={signOut}
+            onPress={handleSignOut}
             disabled={isMutating}
           />
         }

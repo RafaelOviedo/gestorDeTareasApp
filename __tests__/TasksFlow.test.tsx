@@ -1,6 +1,12 @@
 import notifee, { AuthorizationStatus } from '@notifee/react-native';
 import { Alert } from 'react-native';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import { registerUser } from '../src/services/auth';
@@ -18,6 +24,14 @@ afterEach(() => {
   jest.useRealTimers();
   jest.restoreAllMocks();
 });
+
+async function renderApp() {
+  const app = render(<App />);
+  await waitFor(() => {
+    expect(screen.queryByLabelText('Recuperando sesión')).toBeNull();
+  });
+  return app;
+}
 
 async function press(label: string) {
   await act(async () => {
@@ -39,7 +53,7 @@ async function createTask(title = 'Repasar') {
 }
 
 test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuario no la ve', async () => {
-  const app = render(<App />);
+  const app = await renderApp();
   await login();
   expect(screen.getByText('Todavía no hay tareas')).toBeVisible();
   await press('Crear tarea');
@@ -54,8 +68,7 @@ test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuari
     screen.getByText('Notificación solicitada para esa fecha'),
   ).toBeVisible();
   app.unmount();
-  render(<App />);
-  await login();
+  await renderApp();
   expect(screen.getByText('Repasar')).toBeVisible();
   await press('Cerrar sesión');
   await login('Juan', 'Otra');
@@ -73,7 +86,7 @@ test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuari
 });
 
 test('cancelar no guarda y un título vacío muestra validación', async () => {
-  render(<App />);
+  await renderApp();
   await login();
   await press('Crear tarea');
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), '   ');
@@ -87,7 +100,7 @@ test('cancelar no guarda y un título vacío muestra validación', async () => {
 
 test('elimina solo después de confirmar y la eliminación persiste', async () => {
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-  const app = render(<App />);
+  const app = await renderApp();
   await login();
   await createTask();
   await press('Eliminar tarea: Repasar');
@@ -105,13 +118,12 @@ test('elimina solo después de confirmar y la eliminación persiste', async () =
   expect(screen.queryByText('Repasar')).toBeNull();
   expect(screen.getByText('Todavía no hay tareas')).toBeVisible();
   app.unmount();
-  render(<App />);
-  await login();
+  await renderApp();
   expect(screen.getByText('Todavía no hay tareas')).toBeVisible();
 });
 
 test('si falla el guardado mantiene el formulario y permite reintentar', async () => {
-  render(<App />);
+  await renderApp();
   await login();
   await press('Crear tarea');
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), 'Repasar');
@@ -133,7 +145,7 @@ test('si falla el guardado mantiene el formulario y permite reintentar', async (
 
 test('si falla eliminar la tarea permanece visible y guardada', async () => {
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-  render(<App />);
+  await renderApp();
   await login();
   await createTask();
   await press('Eliminar tarea: Repasar');
@@ -154,7 +166,7 @@ test('si falla eliminar la tarea permanece visible y guardada', async () => {
 
 test('distingue un error de carga de una lista vacía y permite reintentar', async () => {
   await addTask('user:ana', { title: 'Repasar', reminderSeconds: 0 });
-  render(<App />);
+  await renderApp();
   const originalGetItem = jest
     .mocked(AsyncStorage.getItem)
     .getMockImplementation()!;
@@ -172,7 +184,7 @@ test('distingue un error de carga de una lista vacía y permite reintentar', asy
 });
 
 test('un doble toque durante el guardado crea una sola tarea', async () => {
-  render(<App />);
+  await renderApp();
   await login();
   await press('Crear tarea');
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), 'Repasar');
@@ -202,7 +214,7 @@ test('un doble toque durante el guardado crea una sola tarea', async () => {
 });
 
 test('completa, conserva el estado al remontar y permite volver a pendiente', async () => {
-  const app = render(<App />);
+  const app = await renderApp();
   await login();
   await createTask();
   expect(screen.getByText('1 pendiente · 0 completadas')).toBeVisible();
@@ -210,8 +222,7 @@ test('completa, conserva el estado al remontar y permite volver a pendiente', as
   expect(screen.getByText('Completada')).toBeVisible();
   expect(screen.getByText('0 pendientes · 1 completada')).toBeVisible();
   app.unmount();
-  render(<App />);
-  await login();
+  await renderApp();
   expect(screen.getByText('Completada')).toBeVisible();
   await press('Marcar como pendiente: Repasar');
   expect(screen.getByText('Pendiente')).toBeVisible();
@@ -222,7 +233,7 @@ test('completa, conserva el estado al remontar y permite volver a pendiente', as
 });
 
 test('si falla completar conserva el estado visible y permite reintentar', async () => {
-  render(<App />);
+  await renderApp();
   await login();
   await createTask();
   jest
@@ -239,18 +250,16 @@ test('si falla completar conserva el estado visible y permite reintentar', async
 });
 
 test('ofrece 10 segundos y permite guardar sin recordatorio después de rechazar el permiso', async () => {
-  render(<App />);
+  await renderApp();
   await login();
   await press('Crear tarea');
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), 'Demo');
   fireEvent.press(screen.getByRole('radio', { name: '10 segundos' }));
   const settings = await notifee.getNotificationSettings();
-  jest
-    .mocked(notifee.requestPermission)
-    .mockResolvedValueOnce({
-      ...settings,
-      authorizationStatus: AuthorizationStatus.DENIED,
-    });
+  jest.mocked(notifee.requestPermission).mockResolvedValueOnce({
+    ...settings,
+    authorizationStatus: AuthorizationStatus.DENIED,
+  });
   await press('Guardar tarea');
   expect(
     screen.getByRole('button', { name: 'Abrir ajustes de notificaciones' }),

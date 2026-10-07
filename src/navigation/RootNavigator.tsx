@@ -1,3 +1,7 @@
+import { ActivityIndicator, Text } from 'react-native';
+import Screen from '../components/Screen';
+import AppButton from '../components/AppButton';
+import FormMessage from '../components/FormMessage';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +26,27 @@ const theme = {
 };
 
 export default function RootNavigator() {
-  const { user } = useAuth();
+  const { user, isRestoring, restoreError, retryRestore } = useAuth();
+
+  if (isRestoring) {
+    return (
+      <Screen>
+        <ActivityIndicator
+          accessibilityLabel="Recuperando sesión"
+          color={colors.primary}
+        />
+        <Text>Recuperando sesión…</Text>
+      </Screen>
+    );
+  }
+  if (restoreError) {
+    return (
+      <Screen>
+        <FormMessage message={restoreError} />
+        <AppButton title="Reintentar sesión" onPress={retryRestore} />
+      </Screen>
+    );
+  }
 
   return (
     <NavigationContainer theme={theme}>

@@ -3,6 +3,7 @@ import type { StoredUser, User } from '../types/user';
 import { normalizeUsername, validateCredentials } from '../utils/validations';
 
 export const USERS_STORAGE_KEY = 'users';
+export const SESSION_STORAGE_KEY = 'session';
 
 function isStoredUser(value: unknown): value is StoredUser {
   if (typeof value !== 'object' || value === null) {
@@ -94,6 +95,42 @@ export async function authenticateUser(
   );
   if (!user) {
     throw new Error('Usuario o contraseña incorrectos.');
+  }
+  return toUser(user);
+}
+
+// La sesión guarda únicamente el id; los datos del usuario se recuperan de users.
+export async function saveSession(userId: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(SESSION_STORAGE_KEY, userId);
+  } catch {
+    throw new Error('No se pudo guardar la sesión. Intentá nuevamente.');
+  }
+}
+
+export async function clearSession(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+    throw new Error('No se pudo cerrar la sesión. Intentá nuevamente.');
+  }
+}
+
+export async function restoreSession(): Promise<User | null> {
+  let userId: string | null;
+  try {
+    userId = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+  } catch {
+    throw new Error('No se pudo recuperar la sesión. Intentá nuevamente.');
+  }
+  if (userId === null) {
+    return null;
+  }
+  const users = await readUsers();
+  const user = users.find(account => account.id === userId);
+  if (!user) {
+    await clearSession();
+    return null;
   }
   return toUser(user);
 }

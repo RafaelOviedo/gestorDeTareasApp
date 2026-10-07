@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   authenticateUser,
+  clearSession,
+  restoreSession,
+  saveSession,
+  SESSION_STORAGE_KEY,
   registerUser,
   USERS_STORAGE_KEY,
 } from '../src/services/auth';
@@ -105,3 +109,54 @@ test.each(['{invalid', 'null', '{}', '[{"id":"1"}]'])(
     expect(await AsyncStorage.getItem(USERS_STORAGE_KEY)).toBe(raw);
   },
 );
+
+test('guarda solo el identificador y recupera el usuario sin exponer la contraseña', async () => {
+  const user = await registerUser('Ana', 'Clave');
+  await saveSession(user.id);
+  expect(await AsyncStorage.getItem('session')).toBe(user.id);
+  expect(await restoreSession()).toEqual(user);
+  expect(await restoreSession()).not.toHaveProperty('password');
+});
+
+test('sin sesión guardada no inicia sesión automáticamente aunque haya usuarios', async () => {
+  await registerUser('Ana', 'Clave');
+  expect(await restoreSession()).toBeNull();
+});
+
+test('cerrar sesión borra únicamente session y conserva las cuentas', async () => {
+  const user = await registerUser('Ana', 'Clave');
+  await saveSession(user.id);
+  await AsyncStorage.setItem('otraClave', 'conservar');
+  await clearSession();
+  expect(await AsyncStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
+  expect(await restoreSession()).toBeNull();
+  expect(await authenticateUser('Ana', 'Clave')).toEqual(user);
+  expect(await AsyncStorage.getItem('otraClave')).toBe('conservar');
+});
+
+test('una sesión cuyo usuario ya no existe se descarta sin dar acceso', async () => {
+  await saveSession('user:eliminado');
+  expect(await restoreSession()).toBeNull();
+  expect(await AsyncStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
+});
+
+test('un error de lectura al recuperar la sesión conserva el id para reintentar', async () => {
+  const user = await registerUser('Ana', 'Clave');
+  await saveSession(user.id);
+  jest
+    .mocked(AsyncStorage.getItem)
+    .mockRejectedValueOnce(new Error('Read failed'));
+  await expect(restoreSession()).rejects.toThrow(
+    'No se pudo recuperar la sesión',
+  );
+  expect(await AsyncStorage.getItem(SESSION_STORAGE_KEY)).toBe(user.id);
+  expect(await restoreSession()).toEqual(user);
+});
+
+test('cuentas corruptas bloquean la restauración sin borrar la sesión ni los datos', async () => {
+  await saveSession('user:ana');
+  await AsyncStorage.setItem(USERS_STORAGE_KEY, '{invalid');
+  await expect(restoreSession()).rejects.toThrow('formato inválido');
+  expect(await AsyncStorage.getItem(SESSION_STORAGE_KEY)).toBe('user:ana');
+  expect(await AsyncStorage.getItem(USERS_STORAGE_KEY)).toBe('{invalid');
+});
