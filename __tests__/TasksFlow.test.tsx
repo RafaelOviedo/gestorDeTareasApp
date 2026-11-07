@@ -75,6 +75,11 @@ test('crea un evento desde el detalle, conserva el vínculo y evita ofrecer otro
   const tomorrow = new Date(Date.now() + 86400_000);
   fireEvent(screen.getByTestId('calendar-date-picker'), 'onValueChange', {}, tomorrow);
   await press('Listo');
+  await press('Elegir hora del evento');
+  const time = new Date(tomorrow);
+  time.setHours(14, 30, 0, 0);
+  fireEvent(screen.getByTestId('calendar-date-picker'), 'onValueChange', {}, time);
+  await press('Listo');
   await press('30 minutos');
   await press('Crear evento');
   expect(screen.getByText('Evento en el calendario')).toBeVisible();
@@ -82,6 +87,8 @@ test('crea un evento desde el detalle, conserva el vínculo y evita ofrecer otro
   const saved = (await getTasks('user:ana'))[0].calendarEvent!;
   expect(Date.parse(saved.endAt) - Date.parse(saved.startAt)).toBe(1800_000);
   expect(new Date(saved.startAt).getDate()).toBe(tomorrow.getDate());
+  expect(new Date(saved.startAt).getHours()).toBe(14);
+  expect(new Date(saved.startAt).getMinutes()).toBe(30);
   app.unmount();
   await renderApp();
   await press('Ver detalle: Repasar');

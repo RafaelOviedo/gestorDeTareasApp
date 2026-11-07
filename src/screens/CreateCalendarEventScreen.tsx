@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  AppState,
-  Platform,
-  Text,
-  View,
-} from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import type { DeviceCalendar } from '../../specs/NativeTaskCalendar';
@@ -23,6 +16,7 @@ import { formatReminderDate } from '../utils/tasks';
 import Screen from '../components/Screen';
 import AppButton from '../components/AppButton';
 import FormMessage from '../components/FormMessage';
+import EventDateTimePicker from '../components/EventDateTimePicker';
 import { styles } from '../styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateCalendarEvent'>;
@@ -253,40 +247,12 @@ export default function CreateCalendarEventScreen({
               onPress={() => setPicker('time')}
             />
             {picker && !disabled ? (
-              <>
-                <DateTimePicker
-                  testID="calendar-date-picker"
-                  value={start}
-                  mode={picker}
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  minimumDate={picker === 'date' ? new Date() : undefined}
-                  is24Hour
-                  onValueChange={(_event, date) => {
-                    const next = new Date(start);
-                    if (picker === 'date') {
-                      next.setFullYear(
-                        date.getFullYear(),
-                        date.getMonth(),
-                        date.getDate(),
-                      );
-                    } else {
-                      next.setHours(date.getHours(), date.getMinutes(), 0, 0);
-                    }
-                    setStart(next);
-                    if (Platform.OS === 'android') {
-                      setPicker(null);
-                    }
-                  }}
-                  onDismiss={() => setPicker(null)}
-                />
-                {Platform.OS === 'ios' ? (
-                  <AppButton
-                    title="Listo"
-                    variant="secondary"
-                    onPress={() => setPicker(null)}
-                  />
-                ) : null}
-              </>
+              <EventDateTimePicker
+                value={start}
+                mode={picker}
+                onChange={setStart}
+                onClose={() => setPicker(null)}
+              />
             ) : null}
             <Text style={styles.label}>Duración</Text>
             {EVENT_DURATIONS.map(minutes => (

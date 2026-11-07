@@ -88,6 +88,19 @@ Para asociar una persona, pulsar **Elegir contacto** desde el detalle, autorizar
 
 Para agendar una tarea, pulsar **Agregar al calendario**, autorizar el permiso, elegir fecha, hora y duración y pulsar **Crear evento**. Luego verificarlo en la app Calendario. En iOS se usa el calendario predeterminado con permiso de escritura; en Android se puede elegir un calendario disponible. El dispositivo o simulador debe tener un calendario configurado que permita agregar eventos.
 
+### Verificación manual para la entrega
+
+Después de compilar, realizar este recorrido en iOS y Android:
+
+1. Registrar una cuenta, iniciar sesión y crear una tarea con recordatorio de **10 segundos**. Verificar que llegue la notificación.
+2. Adjuntar una foto, guardar la ubicación, elegir un contacto y crear un evento. Comprobar la imagen en la lista y el detalle, las coordenadas y el contacto en el detalle, y el evento en la app Calendario.
+3. Completar y volver a poner pendiente la tarea. Cerrar la app desde el selector de aplicaciones y abrirla: deben conservarse la sesión, la tarea y sus datos asociados.
+4. Cerrar sesión e ingresar con otra cuenta: la tarea anterior no debe aparecer. Volver a la primera cuenta y verificar que sigue guardada.
+5. Cuando el sistema solicite permiso para un recurso, rechazarlo, habilitarlo desde Ajustes y reintentar. Verificar los mensajes y que se pueda seguir usando la app. En Android, la galería usa el selector del sistema sin acceso amplio a las fotos; cancelar ese selector o la selección de contacto tampoco debe modificar la tarea.
+6. Quitar o reemplazar los datos adjuntos y eliminar la tarea. El evento debe conservarse en Calendario; eliminarlo allí al terminar la prueba.
+
+Para repetir un diálogo de permiso, restablecer el permiso del recurso desde el sistema según el dispositivo. La cámara requiere un dispositivo físico; la ubicación, los contactos y el calendario necesitan los datos de prueba indicados arriba.
+
 ## Ejecutar los tests
 
 Con las dependencias instaladas (`npm ci`), ejecutar desde la raíz del proyecto:
@@ -97,5 +110,29 @@ npm test
 ```
 
 Los tests usan Jest y React Native Testing Library. No requieren iniciar Metro, abrir un emulador ni compilar la app.
+
+Para generar el informe de cobertura:
+
+```sh
+npm run test:coverage
+```
+
+El resumen aparece en la terminal y el informe navegable se guarda en `coverage/index.html`. La carpeta `coverage/` no se sube a Git. Se mide el código TypeScript/JavaScript de la app, excluyendo declaraciones de tipos y estilos.
+
+Los tests cubren componentes reutilizables, navegación y formularios, autenticación, acciones de Zustand, persistencia, recordatorios, permisos y recursos del dispositivo. También verifican errores de almacenamiento, aislamiento entre usuarios y una tarea que combina foto, ubicación, contacto y evento.
+
+Las APIs nativas usan mocks en Jest: estos tests verifican el comportamiento de la app, pero la cámara real, la recepción de notificaciones y la creación de eventos en el calendario deben comprobarse con el recorrido manual anterior.
+
+Revisión del 07/11/2026: **239 tests aprobados en 22 suites**, con **93,14 % de cobertura de líneas**. Esta revisión no incluye compilación ni ejecución nativa en simuladores o dispositivos.
+
+Para revisar el código con ESLint:
+
+```sh
+npm run lint
+```
+
+Si Watchman falla en el entorno local, se puede ejecutar `npm test -- --runInBand --watchman=false` o `npm run test:coverage -- --watchman=false`.
+
+La siguiente captura corresponde al Parcial 1; el total actual se obtiene al ejecutar los tests:
 
 ![Resultado de npm test: 9 suites y 100 tests aprobados](docs/images/tests.png)

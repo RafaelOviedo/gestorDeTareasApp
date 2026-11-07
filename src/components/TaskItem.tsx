@@ -29,7 +29,7 @@ export default function TaskItem({
     : task.notificationId
     ? 'Notificación solicitada para esa fecha'
     : task.reminderAt && Date.parse(task.reminderAt) <= Date.now()
-    ? 'Fecha vencida; sin nuevo aviso'
+    ? 'El horario del recordatorio ya pasó'
     : 'Sin notificación programada';
   const busy = isDeleting || isUpdating;
   return (
