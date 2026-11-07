@@ -14,6 +14,8 @@ Cada tarea puede guardar su ubicación actual, con coordenadas, precisión estim
 
 También permite elegir un contacto de la agenda como persona relacionada con la tarea. Guarda su nombre y, si están disponibles, su primer teléfono y correo; se puede cambiar o quitar desde el detalle.
 
+Desde el detalle también podés crear un evento en el calendario del dispositivo, eligiendo fecha, hora y duración. La tarea conserva el vínculo y los datos del evento creado. Completar o eliminar la tarea conserva el evento; los cambios posteriores se hacen desde la app Calendario.
+
 ## Stack
 
 - React Native CLI 0.87.1 y React 19.2.3, sin Expo.
@@ -26,6 +28,7 @@ También permite elegir un contacto de la agenda como persona relacionada con la
 - React Native Image Picker para cámara y galería, y React Native File Access para conservar las fotos en el almacenamiento privado de la app.
 - React Native Community Geolocation para obtener la ubicación actual del dispositivo.
 - React Native Contacts para seleccionar contactos de la agenda.
+- Módulo nativo de calendario con EventKit (iOS) y Calendar Provider (Android), conectado a React Native mediante TurboModules. React Native Community DateTimePicker para elegir fecha y hora.
 - Jest y React Native Testing Library para los tests.
 
 ## Instalación y ejecución
@@ -82,6 +85,8 @@ Para adjuntar una foto, abrir **Ver detalle** en una tarea y pulsar **Tomar foto
 Para guardar un lugar, pulsar **Usar ubicación actual** desde el detalle y aceptar el permiso. En el simulador de iPhone, seleccionar una ubicación simulada desde **Features → Location**; en un dispositivo físico, activar los servicios de ubicación.
 
 Para asociar una persona, pulsar **Elegir contacto** desde el detalle, autorizar el acceso y seleccionar un contacto. En el simulador de iPhone podés crear contactos desde la app **Contactos**. Si autorizaste solo algunos contactos, podés cambiar esa selección desde Ajustes.
+
+Para agendar una tarea, pulsar **Agregar al calendario**, autorizar el permiso, elegir fecha, hora y duración y pulsar **Crear evento**. Luego verificarlo en la app Calendario. En iOS se usa el calendario predeterminado con permiso de escritura; en Android se puede elegir un calendario disponible. El dispositivo o simulador debe tener un calendario configurado que permita agregar eventos.
 
 ## Ejecutar los tests
 

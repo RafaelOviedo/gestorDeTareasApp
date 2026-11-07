@@ -11,6 +11,7 @@ import DevicePermissions from '../components/DevicePermissions';
 import TaskPhotoEditor from '../components/TaskPhotoEditor';
 import TaskLocationEditor from '../components/TaskLocationEditor';
 import TaskContactEditor from '../components/TaskContactEditor';
+import TaskCalendarSection from '../components/TaskCalendarSection';
 import { styles } from '../styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
@@ -73,6 +74,10 @@ export default function TaskDetailScreen({ route, navigation }: Props) {
         onChoose={() =>
           navigation.navigate('SelectContact', { taskId: task.id })
         }
+      />
+      <TaskCalendarSection
+        task={task}
+        onCreate={() => navigation.navigate('CreateCalendarEvent', { taskId: task.id })}
       />
       <AppButton
         title={

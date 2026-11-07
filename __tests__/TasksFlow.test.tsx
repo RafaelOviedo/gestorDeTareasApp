@@ -7,7 +7,7 @@ import * as locationService from '../src/services/taskLocation';
 import { openSettings } from 'react-native-permissions';
 import Contacts, { type Contact } from 'react-native-contacts';
 import * as contactsService from '../src/services/taskContacts';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import {
   act,
   fireEvent,
@@ -20,6 +20,8 @@ import App from '../App';
 import { registerUser } from '../src/services/auth';
 import { addTask, getTasks, tasksStorageKey } from '../src/services/tasks';
 import { useTasksStore } from '../src/stores/useTasksStore';
+import NativeTaskCalendar from '../specs/NativeTaskCalendar';
+import * as calendarService from '../src/services/taskCalendar';
 
 beforeEach(async () => {
   jest.useFakeTimers();
@@ -60,6 +62,94 @@ async function createTask(title = 'Repasar') {
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), title);
   await press('Guardar tarea');
 }
+
+test('crea un evento desde el detalle, conserva el vínculo y evita ofrecer otro evento', async () => {
+  const app = await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  expect(NativeTaskCalendar!.getCalendars).not.toHaveBeenCalled();
+  await press('Agregar al calendario');
+  expect(NativeTaskCalendar!.createEvent).not.toHaveBeenCalled();
+  await press('Elegir fecha del evento');
+  const tomorrow = new Date(Date.now() + 86400_000);
+  fireEvent(screen.getByTestId('calendar-date-picker'), 'onValueChange', {}, tomorrow);
+  await press('Listo');
+  await press('30 minutos');
+  await press('Crear evento');
+  expect(screen.getByText('Evento en el calendario')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Agregar al calendario' })).toBeNull();
+  const saved = (await getTasks('user:ana'))[0].calendarEvent!;
+  expect(Date.parse(saved.endAt) - Date.parse(saved.startAt)).toBe(1800_000);
+  expect(new Date(saved.startAt).getDate()).toBe(tomorrow.getDate());
+  app.unmount();
+  await renderApp();
+  await press('Ver detalle: Repasar');
+  expect(screen.getByText('Calendario predeterminado')).toBeVisible();
+  expect(NativeTaskCalendar!.createEvent).toHaveBeenCalledTimes(1);
+});
+
+test('cancelar la creación no guarda un vínculo ni crea un evento', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  await press('Agregar al calendario');
+  await press('Cancelar');
+  expect((await getTasks('user:ana'))[0].calendarEvent).toBeNull();
+  expect(NativeTaskCalendar!.createEvent).not.toHaveBeenCalled();
+});
+
+test('calendario informa rechazo y ausencia de calendarios, con ajustes y reintento', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  jest.spyOn(calendarService, 'listDeviceCalendars')
+    .mockRejectedValueOnce(new calendarService.CalendarError('Permiso rechazado.', true))
+    .mockResolvedValueOnce([]);
+  await press('Agregar al calendario');
+  expect(screen.getByText('Permiso rechazado.')).toBeVisible();
+  await press('Abrir ajustes de calendario');
+  expect(openSettings).toHaveBeenCalledWith('application');
+  await press('Reintentar calendarios');
+  expect(screen.getByText(/No hay calendarios disponibles/)).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Crear evento' })).toBeNull();
+  expect(NativeTaskCalendar!.createEvent).not.toHaveBeenCalled();
+});
+
+test('un fallo al guardar el vínculo mantiene el formulario abierto para recuperar el evento', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  await press('Agregar al calendario');
+  jest.mocked(AsyncStorage.setItem).mockRejectedValueOnce(new Error('disk'));
+  await press('Crear evento');
+  expect(screen.getByText(/El evento se creó, pero no se pudo guardar el vínculo/)).toBeVisible();
+  expect((await getTasks('user:ana'))[0].calendarEvent).toBeNull();
+  await press('Crear evento');
+  expect(screen.getByText('Evento en el calendario')).toBeVisible();
+  expect((await getTasks('user:ana'))[0].calendarEvent?.eventId).toBe('event-1');
+});
+
+test('al regresar de Ajustes por inactive refresca calendarios sin pedir otro permiso', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  const subscriptions = jest.spyOn(AppState, 'addEventListener');
+  const list = jest.spyOn(calendarService, 'listDeviceCalendars');
+  await press('Agregar al calendario');
+  const listener = subscriptions.mock.calls[subscriptions.mock.calls.length - 1][1];
+  await act(async () => {
+    listener('background');
+    listener('inactive');
+    listener('active');
+  });
+  expect(list.mock.calls).toEqual([[true], [false]]);
+  expect(screen.getByRole('button', { name: 'Crear evento' })).toBeVisible();
+});
 
 test('busca un contacto, lo asocia, lo conserva al reiniciar y permite quitarlo', async () => {
   const app = await renderApp();

@@ -11,6 +11,7 @@ import HomeScreen from '../screens/HomeScreen';
 import CreateTaskScreen from '../screens/CreateTaskScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
 import SelectContactScreen from '../screens/SelectContactScreen';
+import CreateCalendarEventScreen from '../screens/CreateCalendarEventScreen';
 import type { RootStackParamList } from '../types/navigation';
 import { colors } from '../styles';
 
@@ -80,6 +81,11 @@ export default function RootNavigator() {
               name="CreateTask"
               component={CreateTaskScreen}
               options={{ title: 'Crear tarea' }}
+            />
+            <Stack.Screen
+              name="CreateCalendarEvent"
+              component={CreateCalendarEventScreen}
+              options={{ title: 'Evento de la tarea' }}
             />
           </Stack.Group>
         ) : (

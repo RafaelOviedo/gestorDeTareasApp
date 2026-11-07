@@ -4,6 +4,21 @@ import mockSafeAreaContext from 'react-native-safe-area-context/jest/mock';
 
 jest.mock('react-native-safe-area-context', () => mockSafeAreaContext);
 
+jest.mock('./specs/NativeTaskCalendar', () => ({
+  __esModule: true,
+  default: {
+    getCalendars: jest.fn(async () => [{ id: 'default', title: 'Calendario predeterminado' }]),
+    createEvent: jest.fn(async (_operationId, calendarId, _title, startDate, endDate) => ({
+      eventId: 'event-1', calendarId, calendarName: 'Calendario predeterminado', startDate, endDate,
+    })),
+  },
+}));
+
+jest.mock('@react-native-community/datetimepicker', () => {
+  const { View } = require('react-native');
+  return { __esModule: true, default: View };
+});
+
 jest.mock('react-native-contacts', () => ({
   __esModule: true,
   default: { getAllWithoutPhotos: jest.fn(async () => []) },

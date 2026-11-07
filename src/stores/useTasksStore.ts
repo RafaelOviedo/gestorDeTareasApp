@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as taskService from '../services/tasks';
-import type { Task, TaskDraft } from '../types/task';
+import type { Task, TaskDraft, CalendarEventDraft } from '../types/task';
 import { pickTaskImage, type ImageSource } from '../services/taskImages';
 import { getTaskLocation } from '../services/taskLocation';
 import { getDeviceContact } from '../services/taskContacts';
@@ -27,6 +27,7 @@ type TasksStore = {
   removeLocation: (taskId: string) => Promise<boolean>;
   attachContact: (taskId: string, recordId: string) => Promise<boolean>;
   removeContact: (taskId: string) => Promise<boolean>;
+  createCalendarEvent: (taskId: string, draft: CalendarEventDraft) => Promise<boolean>;
 };
 
 export const useTasksStore = create<TasksStore>()((set, get) => {
@@ -193,6 +194,17 @@ export const useTasksStore = create<TasksStore>()((set, get) => {
           return;
         }
         return taskService.setTaskContact(userId, taskId, contact);
+      });
+    },
+    createCalendarEvent: (taskId, draft) => {
+      const version = ownerVersion;
+      return mutate({ type: 'update', taskId }, async userId => {
+        if (!get().tasks.some(task => task.id === taskId && task.userId === userId)) {
+          throw new Error('No se encontró esa tarea entre tus tareas.');
+        }
+        return taskService.createTaskCalendarEvent(
+          userId, taskId, draft, () => version === ownerVersion,
+        );
       });
     },
     removeContact: taskId =>

@@ -5,7 +5,9 @@ import {
   reminderId,
   scheduleReminder,
 } from './notifications';
-import type { Task, TaskDraft, TaskLocation, TaskContact } from '../types/task';
+import type { Task, TaskDraft, TaskLocation, TaskContact, CalendarEventDraft } from '../types/task';
+import { isTaskCalendarEvent } from '../utils/calendar';
+import { createDeviceCalendarEvent } from './taskCalendar';
 import { isTaskContact } from '../utils/contacts';
 import { isTaskLocation } from '../utils/location';
 import { MAX_TASK_TITLE_LENGTH, validateTask } from '../utils/tasks';
@@ -52,6 +54,9 @@ function isTask(value: unknown, userId: string): value is StoredTask {
     (task.contact === undefined ||
       task.contact === null ||
       isTaskContact(task.contact)) &&
+    (task.calendarEvent === undefined ||
+      task.calendarEvent === null ||
+      isTaskCalendarEvent(task.calendarEvent)) &&
     isDate(task.createdAt) &&
     (task.reminderAt === null || isDate(task.reminderAt)) &&
     (task.notificationId === null || typeof task.notificationId === 'string')
@@ -193,6 +198,7 @@ export async function addTask(userId: string, draft: TaskDraft): Promise<Task> {
       imagePath: null,
       location: null,
       contact: null,
+      calendarEvent: null,
     };
     if (task.reminderAt) {
       task.notificationId = reminderId(task);
@@ -316,6 +322,40 @@ export async function setTaskContact(
       task,
       updated,
       'No se pudo guardar el contacto de la tarea. Intentá nuevamente.',
+    );
+    return updated;
+  });
+}
+
+export async function createTaskCalendarEvent(
+  userId: string,
+  taskId: string,
+  draft: CalendarEventDraft,
+  isCurrent: () => boolean = () => true,
+): Promise<Task | void> {
+  return withTaskWrite(userId, async () => {
+    const tasks = await readTasks(userId);
+    const task = tasks.find(item => item.id === taskId);
+    if (!task) {
+      throw new Error('No se encontró esa tarea entre tus tareas.');
+    }
+    if (!isCurrent()) {
+      return;
+    }
+    if (task.calendarEvent) {
+      return task;
+    }
+    const calendarEvent = await createDeviceCalendarEvent(task, draft, isCurrent);
+    if (!calendarEvent) {
+      return;
+    }
+    const updated = { ...task, calendarEvent };
+    await commitTaskChange(
+      userId,
+      tasks.map(item => item.id === taskId ? updated : item),
+      task,
+      updated,
+      'El evento se creó, pero no se pudo guardar el vínculo en la tarea. Reintentá para recuperar el vínculo sin crear otro evento.',
     );
     return updated;
   });

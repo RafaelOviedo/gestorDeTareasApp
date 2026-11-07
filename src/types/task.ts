@@ -12,6 +12,20 @@ export type TaskContact = {
   email: string | null;
 };
 
+export type TaskCalendarEvent = {
+  eventId: string;
+  calendarId: string;
+  calendarName: string;
+  startAt: string;
+  endAt: string;
+};
+
+export type CalendarEventDraft = {
+  calendarId: string;
+  startAt: string;
+  durationMinutes: number;
+};
+
 export type Task = {
   id: string;
   userId: string;
@@ -23,6 +37,7 @@ export type Task = {
   imagePath?: string | null;
   location?: TaskLocation | null;
   contact?: TaskContact | null;
+  calendarEvent?: TaskCalendarEvent | null;
 };
 
 export type TaskDraft = {

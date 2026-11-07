@@ -5,4 +5,5 @@ export type RootStackParamList = {
   CreateTask: undefined;
   TaskDetail: { taskId: string };
   SelectContact: { taskId: string };
+  CreateCalendarEvent: { taskId: string };
 };
