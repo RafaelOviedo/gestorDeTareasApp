@@ -4,4 +4,5 @@ export type RootStackParamList = {
   Home: undefined;
   CreateTask: undefined;
   TaskDetail: { taskId: string };
+  SelectContact: { taskId: string };
 };

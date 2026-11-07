@@ -12,6 +12,8 @@ También podés tomar una foto o elegirla desde la galería para adjuntarla a un
 
 Cada tarea puede guardar su ubicación actual, con coordenadas, precisión estimada y fecha de captura. Se puede actualizar o quitar desde el detalle.
 
+También permite elegir un contacto de la agenda como persona relacionada con la tarea. Guarda su nombre y, si están disponibles, su primer teléfono y correo; se puede cambiar o quitar desde el detalle.
+
 ## Stack
 
 - React Native CLI 0.87.1 y React 19.2.3, sin Expo.
@@ -23,6 +25,7 @@ Cada tarea puede guardar su ubicación actual, con coordenadas, precisión estim
 - React Native Permissions para gestionar permisos de cámara, galería, ubicación, contactos y calendario.
 - React Native Image Picker para cámara y galería, y React Native File Access para conservar las fotos en el almacenamiento privado de la app.
 - React Native Community Geolocation para obtener la ubicación actual del dispositivo.
+- React Native Contacts para seleccionar contactos de la agenda.
 - Jest y React Native Testing Library para los tests.
 
 ## Instalación y ejecución
@@ -77,6 +80,8 @@ Ejecutar los comandos sin `sudo`. Al abrir la app, registrar una cuenta e inicia
 Para adjuntar una foto, abrir **Ver detalle** en una tarea y pulsar **Tomar foto** o **Elegir de galería**. Para probar la cámara usá un dispositivo físico; en el simulador de iPhone podés probar la galería arrastrando una imagen al simulador.
 
 Para guardar un lugar, pulsar **Usar ubicación actual** desde el detalle y aceptar el permiso. En el simulador de iPhone, seleccionar una ubicación simulada desde **Features → Location**; en un dispositivo físico, activar los servicios de ubicación.
+
+Para asociar una persona, pulsar **Elegir contacto** desde el detalle, autorizar el acceso y seleccionar un contacto. En el simulador de iPhone podés crear contactos desde la app **Contactos**. Si autorizaste solo algunos contactos, podés cambiar esa selección desde Ajustes.
 
 ## Ejecutar los tests
 

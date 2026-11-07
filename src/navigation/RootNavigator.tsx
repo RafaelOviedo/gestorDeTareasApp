@@ -10,6 +10,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import CreateTaskScreen from '../screens/CreateTaskScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
+import SelectContactScreen from '../screens/SelectContactScreen';
 import type { RootStackParamList } from '../types/navigation';
 import { colors } from '../styles';
 
@@ -69,6 +70,11 @@ export default function RootNavigator() {
               name="TaskDetail"
               component={TaskDetailScreen}
               options={{ title: 'Detalle de tarea' }}
+            />
+            <Stack.Screen
+              name="SelectContact"
+              component={SelectContactScreen}
+              options={{ title: 'Seleccionar contacto' }}
             />
             <Stack.Screen
               name="CreateTask"

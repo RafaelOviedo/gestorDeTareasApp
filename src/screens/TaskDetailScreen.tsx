@@ -10,6 +10,7 @@ import AppButton from '../components/AppButton';
 import DevicePermissions from '../components/DevicePermissions';
 import TaskPhotoEditor from '../components/TaskPhotoEditor';
 import TaskLocationEditor from '../components/TaskLocationEditor';
+import TaskContactEditor from '../components/TaskContactEditor';
 import { styles } from '../styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
@@ -66,6 +67,13 @@ export default function TaskDetailScreen({ route, navigation }: Props) {
       </View>
       <TaskPhotoEditor key={task.id} task={task} />
       <TaskLocationEditor key={`location:${task.id}`} task={task} />
+      <TaskContactEditor
+        key={`contact:${task.id}`}
+        task={task}
+        onChoose={() =>
+          navigation.navigate('SelectContact', { taskId: task.id })
+        }
+      />
       <AppButton
         title={
           showPermissions

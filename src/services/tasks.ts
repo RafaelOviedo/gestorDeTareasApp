@@ -5,7 +5,8 @@ import {
   reminderId,
   scheduleReminder,
 } from './notifications';
-import type { Task, TaskDraft, TaskLocation } from '../types/task';
+import type { Task, TaskDraft, TaskLocation, TaskContact } from '../types/task';
+import { isTaskContact } from '../utils/contacts';
 import { isTaskLocation } from '../utils/location';
 import { MAX_TASK_TITLE_LENGTH, validateTask } from '../utils/tasks';
 import {
@@ -48,6 +49,9 @@ function isTask(value: unknown, userId: string): value is StoredTask {
     (task.location === undefined ||
       task.location === null ||
       isTaskLocation(task.location)) &&
+    (task.contact === undefined ||
+      task.contact === null ||
+      isTaskContact(task.contact)) &&
     isDate(task.createdAt) &&
     (task.reminderAt === null || isDate(task.reminderAt)) &&
     (task.notificationId === null || typeof task.notificationId === 'string')
@@ -188,6 +192,7 @@ export async function addTask(userId: string, draft: TaskDraft): Promise<Task> {
       notificationId: null,
       imagePath: null,
       location: null,
+      contact: null,
     };
     if (task.reminderAt) {
       task.notificationId = reminderId(task);
@@ -275,6 +280,42 @@ export async function setTaskLocation(
       task,
       updated,
       'No se pudo guardar la ubicación de la tarea. Intentá nuevamente.',
+    );
+    return updated;
+  });
+}
+
+export async function setTaskContact(
+  userId: string,
+  taskId: string,
+  contact: TaskContact | null,
+): Promise<Task> {
+  if (contact !== null && !isTaskContact(contact)) {
+    throw new Error('El contacto de la tarea no es válido.');
+  }
+  return withTaskWrite(userId, async () => {
+    const tasks = await readTasks(userId);
+    const task = tasks.find(item => item.id === taskId);
+    if (!task) {
+      throw new Error('No se encontró esa tarea entre tus tareas.');
+    }
+    const updated = {
+      ...task,
+      contact: contact
+        ? {
+            recordId: contact.recordId,
+            name: contact.name,
+            phone: contact.phone,
+            email: contact.email,
+          }
+        : null,
+    };
+    await commitTaskChange(
+      userId,
+      tasks.map(item => (item.id === taskId ? updated : item)),
+      task,
+      updated,
+      'No se pudo guardar el contacto de la tarea. Intentá nuevamente.',
     );
     return updated;
   });

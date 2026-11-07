@@ -5,6 +5,8 @@ import { FileSystem as mockFiles } from 'react-native-file-access/jest/mock';
 import Geolocation from '@react-native-community/geolocation';
 import * as locationService from '../src/services/taskLocation';
 import { openSettings } from 'react-native-permissions';
+import Contacts, { type Contact } from 'react-native-contacts';
+import * as contactsService from '../src/services/taskContacts';
 import { Alert } from 'react-native';
 import {
   act,
@@ -58,6 +60,69 @@ async function createTask(title = 'Repasar') {
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), title);
   await press('Guardar tarea');
 }
+
+test('busca un contacto, lo asocia, lo conserva al reiniciar y permite quitarlo', async () => {
+  const app = await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  expect(Contacts.getAllWithoutPhotos).not.toHaveBeenCalled();
+  const contact = { recordID: '1', givenName: 'José', familyName: 'Pérez', phoneNumbers: [], emailAddresses: [{ label: 'casa', email: 'jose@example.com' }] } as unknown as Contact;
+  jest.mocked(Contacts.getAllWithoutPhotos).mockResolvedValue([contact]);
+  await press('Elegir contacto');
+  fireEvent.changeText(screen.getByLabelText('Buscar contacto'), 'jose');
+  await press('Seleccionar contacto: José Pérez, jose@example.com');
+  expect(screen.getByText('José Pérez')).toBeVisible();
+  expect(screen.getByText('Sin teléfono')).toBeVisible();
+  await press('Cambiar contacto');
+  await press('Cancelar selección');
+  expect((await getTasks('user:ana'))[0].contact?.recordId).toBe('1');
+  await press('Volver a mis tareas');
+  expect(screen.getByText('Contacto: José Pérez')).toBeVisible();
+  app.unmount();
+  await renderApp();
+  expect(screen.getByText('Contacto: José Pérez')).toBeVisible();
+  await press('Ver detalle: Repasar');
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  await press('Quitar contacto');
+  expect(screen.getByText('José Pérez')).toBeVisible();
+  await act(async () => { alert.mock.calls[0][2]?.find(button => button.text === 'Quitar')?.onPress?.(); });
+  expect((await getTasks('user:ana'))[0].contact).toBeNull();
+  expect(screen.getByRole('button', { name: 'Elegir contacto' })).toBeVisible();
+});
+
+test('la selección muestra errores de permisos, permite ajustes y distingue acceso limitado vacío', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  jest.spyOn(contactsService, 'listDeviceContacts').mockRejectedValueOnce(new contactsService.ContactsError('Acceso bloqueado.', true)).mockResolvedValueOnce({ contacts: [], limited: true });
+  await press('Elegir contacto');
+  expect(screen.getByText('Acceso bloqueado.')).toBeVisible();
+  await press('Abrir ajustes de contactos');
+  expect(openSettings).toHaveBeenCalledWith('application');
+  await press('Actualizar contactos');
+  expect(screen.getByText('Acceso limitado: se muestran solo los contactos que autorizaste.')).toBeVisible();
+  expect(screen.getByText('No hay contactos autorizados. Podés elegirlos desde Ajustes.')).toBeVisible();
+  await press('Cancelar selección');
+  expect((await getTasks('user:ana'))[0].contact).toBeNull();
+});
+
+test('un fallo al asociar mantiene la selección abierta y permite reintentar', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  const contact = { recordID: '2', givenName: 'María', phoneNumbers: [], emailAddresses: [] } as unknown as Contact;
+  jest.mocked(Contacts.getAllWithoutPhotos).mockResolvedValue([contact]);
+  await press('Elegir contacto');
+  jest.mocked(AsyncStorage.setItem).mockRejectedValueOnce(new Error('disk'));
+  await press('Seleccionar contacto: María');
+  expect(screen.getByText('No se pudo guardar el contacto de la tarea. Intentá nuevamente.')).toBeVisible();
+  expect((await getTasks('user:ana'))[0].contact).toBeNull();
+  await press('Seleccionar contacto: María');
+  expect(screen.getByText('María')).toBeVisible();
+});
 
 test('abre el detalle por id, refleja cambios del store y vuelve a Home sin pedir permisos', async () => {
   await renderApp();

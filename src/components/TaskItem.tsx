@@ -43,6 +43,9 @@ export default function TaskItem({
       <Text style={styles.status}>
         {task.completed ? 'Completada' : 'Pendiente'}
       </Text>
+      {task.contact ? (
+        <Text style={styles.detail}>Contacto: {task.contact.name}</Text>
+      ) : null}
       {task.location ? (
         <Text style={styles.detail}>
           Ubicación: {formatCoordinates(task.location)}
