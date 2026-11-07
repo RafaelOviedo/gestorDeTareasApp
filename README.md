@@ -11,6 +11,7 @@ Las tareas pueden incluir recordatorios mediante notificaciones locales a los 10
 - React Native CLI 0.87.1 y React 19.2.3, sin Expo.
 - TypeScript.
 - React Navigation con Native Stack para la navegación.
+- Zustand para el estado global de tareas, con acciones de carga, creación, actualización y eliminación.
 - AsyncStorage para guardar usuarios y tareas.
 - Notifee para las notificaciones locales en iOS y Android.
 - Jest y React Native Testing Library para los tests.

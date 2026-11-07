@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../App';
 import { registerUser } from '../src/services/auth';
 import { addTask, getTasks, tasksStorageKey } from '../src/services/tasks';
+import { useTasksStore } from '../src/stores/useTasksStore';
 
 beforeEach(async () => {
   jest.useFakeTimers();
@@ -71,6 +72,8 @@ test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuari
   await renderApp();
   expect(screen.getByText('Repasar')).toBeVisible();
   await press('Cerrar sesión');
+  expect(useTasksStore.getState().userId).toBeNull();
+  expect(useTasksStore.getState().tasks).toEqual([]);
   await login('Juan', 'Otra');
   expect(
     screen.queryByText('Repasar', { includeHiddenElements: true }),
@@ -83,6 +86,26 @@ test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuari
   expect(
     screen.queryByText('Comprar', { includeHiddenElements: true }),
   ).toBeNull();
+});
+
+test('Home se actualiza por la suscripción al store sin navegar ni recargar la lista', async () => {
+  await renderApp();
+  await login();
+  await act(async () => {
+    await useTasksStore
+      .getState()
+      .addTask({ title: 'Desde el store', reminderSeconds: 0 });
+  });
+  expect(screen.getByText('Desde el store')).toBeVisible();
+  const task = useTasksStore.getState().tasks[0];
+  await act(async () => {
+    await useTasksStore.getState().updateTask(task.id, { completed: true });
+  });
+  expect(screen.getByText('Completada')).toBeVisible();
+  await act(async () => {
+    await useTasksStore.getState().deleteTask(task.id);
+  });
+  expect(screen.getByText('Todavía no hay tareas')).toBeVisible();
 });
 
 test('cancelar no guarda y un título vacío muestra validación', async () => {

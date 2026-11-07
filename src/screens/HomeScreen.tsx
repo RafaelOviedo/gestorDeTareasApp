@@ -13,7 +13,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import type { Task } from '../types/task';
 import { useAuth } from '../context/AuthContext';
-import { deleteTask, getTasks, setTaskCompleted } from '../services/tasks';
+import { useTasksStore } from '../stores/useTasksStore';
 import AppButton from '../components/AppButton';
 import FormMessage from '../components/FormMessage';
 import ReminderPermissionHelp from '../components/ReminderPermissionHelp';
@@ -26,80 +26,44 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export default function HomeScreen({ navigation }: Props) {
   const { user, signOut } = useAuth();
   const userId = user?.id;
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const tasks = useTasksStore(state => state.tasks);
+  const isLoading = useTasksStore(state => state.isLoading);
+  const loadError = useTasksStore(state => state.loadError);
+  const loadTasks = useTasksStore(state => state.loadTasks);
+  const deleteTask = useTasksStore(state => state.deleteTask);
+  const updateTask = useTasksStore(state => state.updateTask);
+  const mutation = useTasksStore(state => state.mutation);
   const [permissionError, setPermissionError] =
     useState<ReminderPermissionError | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const mutating = useRef(false);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const deletingId = mutation?.type === 'delete' ? mutation.taskId : null;
+  const updatingId = mutation?.type === 'update' ? mutation.taskId : null;
+  const signingOut = useRef(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const isMutating = deletingId !== null || updatingId !== null || isSigningOut;
+  const isMutating = mutation !== null || isSigningOut;
   const completedCount = tasks.filter(task => task.completed).length;
   const pendingCount = tasks.length - completedCount;
 
-  const active = useRef(false);
-  const loadSequence = useRef(0);
-
-  const loadTasks = useCallback(async () => {
-    if (!userId) {
-      return;
-    }
-    const sequence = ++loadSequence.current;
-    setIsLoading(true);
-    setLoadError(null);
-    try {
-      const saved = await getTasks(userId);
-      if (active.current && sequence === loadSequence.current) {
-        setTasks(saved);
-      }
-    } catch (cause) {
-      if (active.current && sequence === loadSequence.current) {
-        setLoadError(
-          cause instanceof Error
-            ? cause.message
-            : 'No se pudieron cargar las tareas.',
-        );
-      }
-    } finally {
-      if (active.current && sequence === loadSequence.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [userId]);
-
   useFocusEffect(
     useCallback(() => {
-      active.current = true;
       loadTasks();
-      return () => {
-        active.current = false;
-        // Ignora respuestas pendientes al salir o cambiar de pantalla.
-        loadSequence.current += 1;
-      };
     }, [loadTasks]),
   );
 
   function reload() {
-    if (!mutating.current) {
+    if (!signingOut.current) {
       loadTasks();
     }
   }
 
   async function removeTask(task: Task) {
-    if (!userId || mutating.current || isLoading) {
+    if (!userId || task.userId !== userId || signingOut.current || isLoading) {
       return;
     }
-    mutating.current = true;
-    setDeletingId(task.id);
     setActionError(null);
     setPermissionError(null);
     try {
-      await deleteTask(userId, task.id);
-      // La lista cambia solo después de confirmar el guardado en AsyncStorage.
-      setTasks(current => current.filter(item => item.id !== task.id));
+      await deleteTask(task.id);
     } catch (cause) {
       setPermissionError(
         cause instanceof ReminderPermissionError ? cause : null,
@@ -109,25 +73,17 @@ export default function HomeScreen({ navigation }: Props) {
           ? cause.message
           : 'No se pudo eliminar la tarea.',
       );
-    } finally {
-      mutating.current = false;
-      setDeletingId(null);
     }
   }
 
   async function toggleCompleted(task: Task) {
-    if (!userId || mutating.current || isLoading) {
+    if (!userId || task.userId !== userId || signingOut.current || isLoading) {
       return;
     }
-    mutating.current = true;
-    setUpdatingId(task.id);
     setActionError(null);
     setPermissionError(null);
     try {
-      const updated = await setTaskCompleted(userId, task.id, !task.completed);
-      setTasks(current =>
-        current.map(item => (item.id === updated.id ? updated : item)),
-      );
+      await updateTask(task.id, { completed: !task.completed });
     } catch (cause) {
       setPermissionError(
         cause instanceof ReminderPermissionError ? cause : null,
@@ -137,17 +93,14 @@ export default function HomeScreen({ navigation }: Props) {
           ? cause.message
           : 'No se pudo actualizar la tarea.',
       );
-    } finally {
-      mutating.current = false;
-      setUpdatingId(null);
     }
   }
 
   async function handleSignOut() {
-    if (mutating.current) {
+    if (signingOut.current || useTasksStore.getState().mutation) {
       return;
     }
-    mutating.current = true;
+    signingOut.current = true;
     setIsSigningOut(true);
     setActionError(null);
     setPermissionError(null);
@@ -158,7 +111,7 @@ export default function HomeScreen({ navigation }: Props) {
         cause instanceof Error ? cause.message : 'No se pudo cerrar la sesión.',
       );
     } finally {
-      mutating.current = false;
+      signingOut.current = false;
       setIsSigningOut(false);
     }
   }

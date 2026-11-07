@@ -7,6 +7,7 @@ import {
   saveSession,
 } from '../services/auth';
 import type { User } from '../types/user';
+import { useTasksStore } from '../stores/useTasksStore';
 
 type AuthContextValue = {
   user: User | null;
@@ -27,10 +28,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
+    useTasksStore.getState().setOwner(null);
     async function loadSession() {
       try {
         const savedUser = await restoreSession();
         if (active) {
+          useTasksStore.getState().setOwner(savedUser?.id ?? null);
           setUser(savedUser);
         }
       } catch (cause) {
@@ -50,6 +53,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     loadSession();
     return () => {
       active = false;
+      useTasksStore.getState().setOwner(null);
     };
   }, [restoreAttempt]);
 
@@ -62,11 +66,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   async function signIn(username: string, password: string) {
     const authenticatedUser = await authenticateUser(username, password);
     await saveSession(authenticatedUser.id);
+    useTasksStore.getState().setOwner(authenticatedUser.id);
     setUser(authenticatedUser);
   }
 
   async function signOut() {
     await clearSession();
+    useTasksStore.getState().setOwner(null);
     setUser(null);
   }
 

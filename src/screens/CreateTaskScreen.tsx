@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
@@ -8,7 +8,7 @@ import { ReminderPermissionError } from '../services/notifications';
 import ReminderNotice from '../components/ReminderNotice';
 import FormMessage from '../components/FormMessage';
 import { useAuth } from '../context/AuthContext';
-import { addTask } from '../services/tasks';
+import { useTasksStore } from '../stores/useTasksStore';
 import { MAX_TASK_TITLE_LENGTH, reminderOptions } from '../utils/tasks';
 import FormField from '../components/FormField';
 import Screen from '../components/Screen';
@@ -24,24 +24,22 @@ export default function CreateTaskScreen({ navigation }: Props) {
   const [permissionError, setPermissionError] =
     useState<ReminderPermissionError | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const saving = useRef(false);
+  const addTask = useTasksStore(state => state.addTask);
+  const isSaving = useTasksStore(state => state.mutation !== null);
 
   async function handleSave() {
-    if (saving.current) {
+    if (isSaving) {
       return;
     }
     if (!user) {
       setError('Iniciá sesión para guardar una tarea.');
       return;
     }
-    saving.current = true;
-    setIsSaving(true);
     setError(null);
     setPermissionError(null);
     try {
-      await addTask(user.id, { title, reminderSeconds });
-      if (navigation.isFocused()) {
+      const saved = await addTask({ title, reminderSeconds });
+      if (saved && navigation.isFocused()) {
         navigation.goBack();
       }
     } catch (cause) {
@@ -51,9 +49,6 @@ export default function CreateTaskScreen({ navigation }: Props) {
       setError(
         cause instanceof Error ? cause.message : 'No se pudo guardar la tarea.',
       );
-    } finally {
-      saving.current = false;
-      setIsSaving(false);
     }
   }
 
