@@ -8,6 +8,7 @@ import { formatReminderDate } from '../utils/tasks';
 import Screen from '../components/Screen';
 import AppButton from '../components/AppButton';
 import DevicePermissions from '../components/DevicePermissions';
+import TaskPhotoEditor from '../components/TaskPhotoEditor';
 import { styles } from '../styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
@@ -62,6 +63,7 @@ export default function TaskDetailScreen({ route, navigation }: Props) {
           </Text>
         ) : null}
       </View>
+      <TaskPhotoEditor key={task.id} task={task} />
       <AppButton
         title={
           showPermissions

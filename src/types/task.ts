@@ -6,6 +6,7 @@ export type Task = {
   createdAt: string;
   reminderAt: string | null;
   notificationId: string | null;
+  imagePath?: string | null;
 };
 
 export type TaskDraft = {

@@ -2,6 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { Task } from '../types/task';
 import { formatReminderDate } from '../utils/tasks';
 import { colors } from '../styles';
+import TaskImage from './TaskImage';
 
 type Props = {
   task: Task;
@@ -32,6 +33,9 @@ export default function TaskItem({
   const busy = isDeleting || isUpdating;
   return (
     <View style={styles.card}>
+      {task.imagePath ? (
+        <TaskImage path={task.imagePath} title={task.title} compact />
+      ) : null}
       <Text style={[styles.title, task.completed && styles.completedTitle]}>
         {task.title}
       </Text>

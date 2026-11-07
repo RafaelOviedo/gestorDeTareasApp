@@ -7,6 +7,12 @@ import {
 } from './notifications';
 import type { Task, TaskDraft } from '../types/task';
 import { MAX_TASK_TITLE_LENGTH, validateTask } from '../utils/tasks';
+import {
+  isTaskImagePath,
+  persistTaskImage,
+  removeTaskImageFile,
+  type SelectedImage,
+} from './taskImages';
 
 export function tasksStorageKey(userId: string): string {
   if (!userId.trim()) {
@@ -35,6 +41,9 @@ function isTask(value: unknown, userId: string): value is StoredTask {
     task.title.trim().length > 0 &&
     task.title.length <= MAX_TASK_TITLE_LENGTH &&
     (task.completed === undefined || typeof task.completed === 'boolean') &&
+    (task.imagePath === undefined ||
+      task.imagePath === null ||
+      isTaskImagePath(task.imagePath)) &&
     isDate(task.createdAt) &&
     (task.reminderAt === null || isDate(task.reminderAt)) &&
     (task.notificationId === null || typeof task.notificationId === 'string')
@@ -173,6 +182,7 @@ export async function addTask(userId: string, draft: TaskDraft): Promise<Task> {
           ? null
           : new Date(now + draft.reminderSeconds * 1000).toISOString(),
       notificationId: null,
+      imagePath: null,
     };
     if (task.reminderAt) {
       task.notificationId = reminderId(task);
@@ -205,6 +215,37 @@ export async function deleteTask(
       null,
       'No se pudo eliminar la tarea. Intentá nuevamente.',
     );
+    await removeTaskImageFile(task.imagePath);
+  });
+}
+
+export async function setTaskImage(
+  userId: string,
+  taskId: string,
+  image: SelectedImage | null,
+): Promise<Task> {
+  return withTaskWrite(userId, async () => {
+    const tasks = await readTasks(userId);
+    const task = tasks.find(item => item.id === taskId);
+    if (!task) {
+      throw new Error('No se encontró esa tarea entre tus tareas.');
+    }
+    const imagePath = image ? await persistTaskImage(image) : null;
+    const updated = { ...task, imagePath };
+    try {
+      await commitTaskChange(
+        userId,
+        tasks.map(item => (item.id === taskId ? updated : item)),
+        task,
+        updated,
+        'No se pudo guardar la foto de la tarea. Intentá nuevamente.',
+      );
+    } catch (cause) {
+      await removeTaskImageFile(imagePath);
+      throw cause;
+    }
+    await removeTaskImageFile(task.imagePath);
+    return updated;
   });
 }
 

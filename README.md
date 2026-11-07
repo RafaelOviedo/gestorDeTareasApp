@@ -8,6 +8,8 @@ Las tareas pueden incluir recordatorios mediante notificaciones locales a los 10
 
 Desde **Ver detalle** se consultan los datos de cada tarea y se administran los permisos del dispositivo.
 
+También podés tomar una foto o elegirla desde la galería para adjuntarla a una tarea. Se muestra en la lista y en el detalle, se conserva al reiniciar la app y se puede reemplazar o quitar.
+
 ## Stack
 
 - React Native CLI 0.87.1 y React 19.2.3, sin Expo.
@@ -17,6 +19,7 @@ Desde **Ver detalle** se consultan los datos de cada tarea y se administran los 
 - AsyncStorage para guardar usuarios y tareas.
 - Notifee para las notificaciones locales en iOS y Android.
 - React Native Permissions para gestionar permisos de cámara, galería, ubicación, contactos y calendario.
+- React Native Image Picker para cámara y galería, y React Native File Access para conservar las fotos en el almacenamiento privado de la app.
 - Jest y React Native Testing Library para los tests.
 
 ## Instalación y ejecución
@@ -67,6 +70,8 @@ npm run android
 ```
 
 Ejecutar los comandos sin `sudo`. Al abrir la app, registrar una cuenta e iniciar sesión. Para probar los recordatorios, crear una tarea con la opción **10 segundos** y aceptar el permiso de notificaciones; en Android, habilitar también Alarmas y recordatorios si la app lo solicita.
+
+Para adjuntar una foto, abrir **Ver detalle** en una tarea y pulsar **Tomar foto** o **Elegir de galería**. Para probar la cámara usá un dispositivo físico; en el simulador de iPhone podés probar la galería arrastrando una imagen al simulador.
 
 ## Ejecutar los tests
 

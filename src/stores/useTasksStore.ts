@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as taskService from '../services/tasks';
 import type { Task, TaskDraft } from '../types/task';
+import { pickTaskImage, type ImageSource } from '../services/taskImages';
 
 type Mutation = { type: 'create' | 'update' | 'delete'; taskId: string | null };
 
@@ -18,6 +19,8 @@ type TasksStore = {
     changes: Pick<Task, 'completed'>,
   ) => Promise<boolean>;
   deleteTask: (taskId: string) => Promise<boolean>;
+  attachImage: (taskId: string, source: ImageSource) => Promise<boolean>;
+  removeImage: (taskId: string) => Promise<boolean>;
 };
 
 export const useTasksStore = create<TasksStore>()((set, get) => {
@@ -55,7 +58,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => {
               : state.tasks.map(task => (task.id === saved.id ? saved : task))
             : state.tasks,
       }));
-      return true;
+      return saved !== undefined || mutation.type === 'delete';
     } catch (cause) {
       if (version === ownerVersion) {
         // La pantalla conserva el error original, incluidos los de permisos.
@@ -130,6 +133,27 @@ export const useTasksStore = create<TasksStore>()((set, get) => {
     deleteTask: taskId =>
       mutate({ type: 'delete', taskId }, userId =>
         taskService.deleteTask(userId, taskId),
+      ),
+    attachImage: (taskId, source) => {
+      const version = ownerVersion;
+      return mutate({ type: 'update', taskId }, async userId => {
+        if (
+          !get().tasks.some(
+            task => task.id === taskId && task.userId === userId,
+          )
+        ) {
+          throw new Error('No se encontró esa tarea entre tus tareas.');
+        }
+        const image = await pickTaskImage(source);
+        if (!image || version !== ownerVersion) {
+          return;
+        }
+        return taskService.setTaskImage(userId, taskId, image);
+      });
+    },
+    removeImage: taskId =>
+      mutate({ type: 'update', taskId }, userId =>
+        taskService.setTaskImage(userId, taskId, null),
       ),
   };
 });

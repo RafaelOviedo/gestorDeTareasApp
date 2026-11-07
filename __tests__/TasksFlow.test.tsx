@@ -1,5 +1,7 @@
 import notifee, { AuthorizationStatus } from '@notifee/react-native';
 import { requestMultiple } from 'react-native-permissions';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { FileSystem as mockFiles } from 'react-native-file-access/jest/mock';
 import { Alert } from 'react-native';
 import {
   act,
@@ -81,6 +83,43 @@ test('el detalle maneja una tarea eliminada sin mostrar datos viejos', async () 
   expect(screen.getByText('Tarea no encontrada')).toBeVisible();
   await press('Volver a mis tareas');
   expect(screen.getByText('Todavía no hay tareas')).toBeVisible();
+});
+
+test('adjunta una foto desde el detalle, la conserva al reiniciar y permite quitarla', async () => {
+  const app = await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  mockFiles.filesystem.set('/cache/photo.jpg', 'photo');
+  jest.mocked(launchImageLibrary).mockResolvedValueOnce({ assets: [{ uri: 'file:///cache/photo.jpg', type: 'image/jpeg' }] });
+  await press('Elegir de galería');
+  expect(screen.getByLabelText('Foto de la tarea: Repasar')).toBeVisible();
+  await press('Volver a mis tareas');
+  expect(screen.getByLabelText('Foto de la tarea: Repasar')).toBeVisible();
+  app.unmount();
+  await renderApp();
+  expect(screen.getByLabelText('Foto de la tarea: Repasar')).toBeVisible();
+  await press('Ver detalle: Repasar');
+  jest.mocked(launchImageLibrary).mockResolvedValueOnce({ didCancel: true });
+  await press('Elegir de galería');
+  expect(screen.getByLabelText('Foto de la tarea: Repasar')).toBeVisible();
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  await press('Quitar foto');
+  expect(screen.getByLabelText('Foto de la tarea: Repasar')).toBeVisible();
+  await act(async () => { alert.mock.calls[0][2]?.find(button => button.text === 'Quitar')?.onPress?.(); });
+  expect(screen.queryByLabelText('Foto de la tarea: Repasar')).toBeNull();
+  expect((await getTasks('user:ana'))[0].imagePath).toBeNull();
+});
+
+test('informa que la cámara no está disponible y permite seguir usando el detalle', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  jest.mocked(launchCamera).mockResolvedValueOnce({ errorCode: 'camera_unavailable' });
+  await press('Tomar foto');
+  expect(screen.getByText('La cámara no está disponible en este dispositivo.')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Elegir de galería' })).toBeEnabled();
 });
 
 test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuario no la ve', async () => {
