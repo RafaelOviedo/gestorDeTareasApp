@@ -34,7 +34,17 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Usamos tu ubicación mientras utilizás la app para asociar un lugar a una tarea.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Usamos la cámara para adjuntar una foto a una tarea.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Accedemos a las fotos que autorices para adjuntar una imagen a una tarea.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Accedemos a los contactos que autorices para elegir una persona relacionada con una tarea.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Usamos el calendario para crear un evento vinculado a una tarea.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Agregamos eventos al calendario para tus tareas, sin leer tus otros eventos.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

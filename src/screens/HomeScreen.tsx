@@ -178,6 +178,7 @@ export default function HomeScreen({ navigation }: Props) {
         renderItem={({ item }) => (
           <TaskItem
             task={item}
+            onOpen={() => navigation.navigate('TaskDetail', { taskId: item.id })}
             onDelete={() => confirmDelete(item)}
             onToggleCompleted={() => {
               toggleCompleted(item);

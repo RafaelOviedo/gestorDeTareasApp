@@ -1,4 +1,5 @@
 import notifee, { AuthorizationStatus } from '@notifee/react-native';
+import { requestMultiple } from 'react-native-permissions';
 import { Alert } from 'react-native';
 import {
   act,
@@ -52,6 +53,35 @@ async function createTask(title = 'Repasar') {
   fireEvent.changeText(screen.getByLabelText('Título de la tarea'), title);
   await press('Guardar tarea');
 }
+
+test('abre el detalle por id, refleja cambios del store y vuelve a Home sin pedir permisos', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  expect(screen.getByText('Fecha de creación')).toBeVisible();
+  expect(screen.getByText('Repasar')).toBeVisible();
+  const task = useTasksStore.getState().tasks[0];
+  await act(async () => { await useTasksStore.getState().updateTask(task.id, { completed: true }); });
+  expect(screen.getByText('Completada')).toBeVisible();
+  await press('Ver permisos del dispositivo');
+  expect(screen.getByText('Cámara')).toBeVisible();
+  expect(requestMultiple).not.toHaveBeenCalled();
+  await press('Volver a mis tareas');
+  expect(screen.getByText('0 pendientes · 1 completada')).toBeVisible();
+});
+
+test('el detalle maneja una tarea eliminada sin mostrar datos viejos', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  const task = useTasksStore.getState().tasks[0];
+  await act(async () => { await useTasksStore.getState().deleteTask(task.id); });
+  expect(screen.getByText('Tarea no encontrada')).toBeVisible();
+  await press('Volver a mis tareas');
+  expect(screen.getByText('Todavía no hay tareas')).toBeVisible();
+});
 
 test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuario no la ve', async () => {
   const app = await renderApp();

@@ -6,6 +6,8 @@ Aplicación móvil para organizar tareas personales. Permite registrarse, inicia
 
 Las tareas pueden incluir recordatorios mediante notificaciones locales a los 10 segundos, 30 segundos, 1 minuto o 5 minutos. La app funciona sin backend ni conexión a internet.
 
+Desde **Ver detalle** se consultan los datos de cada tarea y se administran los permisos del dispositivo.
+
 ## Stack
 
 - React Native CLI 0.87.1 y React 19.2.3, sin Expo.
@@ -14,6 +16,7 @@ Las tareas pueden incluir recordatorios mediante notificaciones locales a los 10
 - Zustand para el estado global de tareas, con acciones de carga, creación, actualización y eliminación.
 - AsyncStorage para guardar usuarios y tareas.
 - Notifee para las notificaciones locales en iOS y Android.
+- React Native Permissions para gestionar permisos de cámara, galería, ubicación, contactos y calendario.
 - Jest y React Native Testing Library para los tests.
 
 ## Instalación y ejecución

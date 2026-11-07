@@ -7,6 +7,7 @@ type Props = {
   task: Task;
   onDelete: () => void;
   onToggleCompleted: () => void;
+  onOpen?: () => void;
   isUpdating?: boolean;
   disabled?: boolean;
   isDeleting?: boolean;
@@ -16,6 +17,7 @@ export default function TaskItem({
   task,
   onDelete,
   onToggleCompleted,
+  onOpen,
   isUpdating = false,
   disabled = false,
   isDeleting = false,
@@ -36,6 +38,16 @@ export default function TaskItem({
       <Text style={styles.status}>
         {task.completed ? 'Completada' : 'Pendiente'}
       </Text>
+      {onOpen ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={`Ver detalle: ${task.title}`}
+          onPress={onOpen}
+          style={styles.completeButton}
+        >
+          <Text style={styles.completeText}>Ver detalle</Text>
+        </TouchableOpacity>
+      ) : null}
       <Text style={styles.detail}>
         {task.reminderAt
           ? `Recordatorio: ${formatReminderDate(task.reminderAt)}`

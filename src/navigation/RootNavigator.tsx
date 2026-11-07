@@ -9,6 +9,7 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import CreateTaskScreen from '../screens/CreateTaskScreen';
+import TaskDetailScreen from '../screens/TaskDetailScreen';
 import type { RootStackParamList } from '../types/navigation';
 import { colors } from '../styles';
 
@@ -63,6 +64,11 @@ export default function RootNavigator() {
               name="Home"
               component={HomeScreen}
               options={{ title: 'Mis tareas' }}
+            />
+            <Stack.Screen
+              name="TaskDetail"
+              component={TaskDetailScreen}
+              options={{ title: 'Detalle de tarea' }}
             />
             <Stack.Screen
               name="CreateTask"
