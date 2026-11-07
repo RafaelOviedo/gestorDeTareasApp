@@ -3,6 +3,7 @@ import type { Task } from '../types/task';
 import { formatReminderDate } from '../utils/tasks';
 import { colors } from '../styles';
 import TaskImage from './TaskImage';
+import { formatCoordinates } from '../utils/location';
 
 type Props = {
   task: Task;
@@ -42,6 +43,11 @@ export default function TaskItem({
       <Text style={styles.status}>
         {task.completed ? 'Completada' : 'Pendiente'}
       </Text>
+      {task.location ? (
+        <Text style={styles.detail}>
+          Ubicación: {formatCoordinates(task.location)}
+        </Text>
+      ) : null}
       {onOpen ? (
         <TouchableOpacity
           accessibilityRole="button"

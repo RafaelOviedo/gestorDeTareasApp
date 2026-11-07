@@ -9,6 +9,7 @@ import Screen from '../components/Screen';
 import AppButton from '../components/AppButton';
 import DevicePermissions from '../components/DevicePermissions';
 import TaskPhotoEditor from '../components/TaskPhotoEditor';
+import TaskLocationEditor from '../components/TaskLocationEditor';
 import { styles } from '../styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
@@ -64,6 +65,7 @@ export default function TaskDetailScreen({ route, navigation }: Props) {
         ) : null}
       </View>
       <TaskPhotoEditor key={task.id} task={task} />
+      <TaskLocationEditor key={`location:${task.id}`} task={task} />
       <AppButton
         title={
           showPermissions

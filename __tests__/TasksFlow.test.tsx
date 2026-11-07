@@ -2,6 +2,9 @@ import notifee, { AuthorizationStatus } from '@notifee/react-native';
 import { requestMultiple } from 'react-native-permissions';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { FileSystem as mockFiles } from 'react-native-file-access/jest/mock';
+import Geolocation from '@react-native-community/geolocation';
+import * as locationService from '../src/services/taskLocation';
+import { openSettings } from 'react-native-permissions';
 import { Alert } from 'react-native';
 import {
   act,
@@ -120,6 +123,47 @@ test('informa que la cámara no está disponible y permite seguir usando el deta
   await press('Tomar foto');
   expect(screen.getByText('La cámara no está disponible en este dispositivo.')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Elegir de galería' })).toBeEnabled();
+});
+
+test('guarda coordenadas desde el detalle, las conserva al reiniciar y permite quitarlas', async () => {
+  const app = await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  expect(Geolocation.getCurrentPosition).not.toHaveBeenCalled();
+  jest.mocked(Geolocation.getCurrentPosition).mockImplementationOnce(success => success({
+    coords: { latitude: -34.603722, longitude: -58.381592, accuracy: 12, altitude: null, altitudeAccuracy: null, heading: null, speed: null },
+    timestamp: Date.now(),
+  }));
+  await press('Usar ubicación actual');
+  expect(screen.getByText('Coordenadas: -34.603722, -58.381592')).toBeVisible();
+  expect(screen.getByText('Precisión estimada: 12 m')).toBeVisible();
+  await press('Volver a mis tareas');
+  expect(screen.getByText('Ubicación: -34.603722, -58.381592')).toBeVisible();
+  app.unmount();
+  await renderApp();
+  expect(screen.getByText('Ubicación: -34.603722, -58.381592')).toBeVisible();
+  await press('Ver detalle: Repasar');
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  await press('Quitar ubicación');
+  expect(screen.getByText('Coordenadas: -34.603722, -58.381592')).toBeVisible();
+  await act(async () => { alert.mock.calls[0][2]?.find(button => button.text === 'Quitar')?.onPress?.(); });
+  expect(screen.getByText('Esta tarea todavía no tiene una ubicación.')).toBeVisible();
+  expect((await getTasks('user:ana'))[0].location).toBeNull();
+});
+
+test('un permiso de ubicación bloqueado ofrece ajustes y permite reintentar', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  jest.spyOn(locationService, 'getTaskLocation').mockRejectedValueOnce(new locationService.LocationError('Acceso bloqueado.', true)).mockResolvedValueOnce({ latitude: 0, longitude: 0, accuracy: 100, capturedAt: new Date().toISOString() });
+  await press('Usar ubicación actual');
+  expect(screen.getByText('Acceso bloqueado.')).toBeVisible();
+  await press('Abrir ajustes de ubicación');
+  expect(openSettings).toHaveBeenCalledWith('application');
+  await press('Usar ubicación actual');
+  expect(screen.getByText('Coordenadas: 0.000000, 0.000000')).toBeVisible();
 });
 
 test('crea, vuelve a listar y conserva una tarea al remontar la app; otro usuario no la ve', async () => {

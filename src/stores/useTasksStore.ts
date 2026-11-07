@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import * as taskService from '../services/tasks';
 import type { Task, TaskDraft } from '../types/task';
 import { pickTaskImage, type ImageSource } from '../services/taskImages';
+import { getTaskLocation } from '../services/taskLocation';
 
 type Mutation = { type: 'create' | 'update' | 'delete'; taskId: string | null };
 
@@ -21,6 +22,8 @@ type TasksStore = {
   deleteTask: (taskId: string) => Promise<boolean>;
   attachImage: (taskId: string, source: ImageSource) => Promise<boolean>;
   removeImage: (taskId: string) => Promise<boolean>;
+  captureLocation: (taskId: string) => Promise<boolean>;
+  removeLocation: (taskId: string) => Promise<boolean>;
 };
 
 export const useTasksStore = create<TasksStore>()((set, get) => {
@@ -154,6 +157,27 @@ export const useTasksStore = create<TasksStore>()((set, get) => {
     removeImage: taskId =>
       mutate({ type: 'update', taskId }, userId =>
         taskService.setTaskImage(userId, taskId, null),
+      ),
+    captureLocation: taskId => {
+      const version = ownerVersion;
+      return mutate({ type: 'update', taskId }, async userId => {
+        if (
+          !get().tasks.some(
+            task => task.id === taskId && task.userId === userId,
+          )
+        ) {
+          throw new Error('No se encontró esa tarea entre tus tareas.');
+        }
+        const location = await getTaskLocation();
+        if (version !== ownerVersion) {
+          return;
+        }
+        return taskService.setTaskLocation(userId, taskId, location);
+      });
+    },
+    removeLocation: taskId =>
+      mutate({ type: 'update', taskId }, userId =>
+        taskService.setTaskLocation(userId, taskId, null),
       ),
   };
 });

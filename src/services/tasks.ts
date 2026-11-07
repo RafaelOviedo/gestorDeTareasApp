@@ -5,7 +5,8 @@ import {
   reminderId,
   scheduleReminder,
 } from './notifications';
-import type { Task, TaskDraft } from '../types/task';
+import type { Task, TaskDraft, TaskLocation } from '../types/task';
+import { isTaskLocation } from '../utils/location';
 import { MAX_TASK_TITLE_LENGTH, validateTask } from '../utils/tasks';
 import {
   isTaskImagePath,
@@ -44,6 +45,9 @@ function isTask(value: unknown, userId: string): value is StoredTask {
     (task.imagePath === undefined ||
       task.imagePath === null ||
       isTaskImagePath(task.imagePath)) &&
+    (task.location === undefined ||
+      task.location === null ||
+      isTaskLocation(task.location)) &&
     isDate(task.createdAt) &&
     (task.reminderAt === null || isDate(task.reminderAt)) &&
     (task.notificationId === null || typeof task.notificationId === 'string')
@@ -183,6 +187,7 @@ export async function addTask(userId: string, draft: TaskDraft): Promise<Task> {
           : new Date(now + draft.reminderSeconds * 1000).toISOString(),
       notificationId: null,
       imagePath: null,
+      location: null,
     };
     if (task.reminderAt) {
       task.notificationId = reminderId(task);
@@ -245,6 +250,32 @@ export async function setTaskImage(
       throw cause;
     }
     await removeTaskImageFile(task.imagePath);
+    return updated;
+  });
+}
+
+export async function setTaskLocation(
+  userId: string,
+  taskId: string,
+  location: TaskLocation | null,
+): Promise<Task> {
+  if (location !== null && !isTaskLocation(location)) {
+    throw new Error('La ubicación de la tarea no es válida.');
+  }
+  return withTaskWrite(userId, async () => {
+    const tasks = await readTasks(userId);
+    const task = tasks.find(item => item.id === taskId);
+    if (!task) {
+      throw new Error('No se encontró esa tarea entre tus tareas.');
+    }
+    const updated = { ...task, location };
+    await commitTaskChange(
+      userId,
+      tasks.map(item => (item.id === taskId ? updated : item)),
+      task,
+      updated,
+      'No se pudo guardar la ubicación de la tarea. Intentá nuevamente.',
+    );
     return updated;
   });
 }
