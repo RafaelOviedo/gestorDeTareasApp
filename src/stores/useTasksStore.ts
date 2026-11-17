@@ -28,6 +28,8 @@ type TasksStore = {
   attachContact: (taskId: string, recordId: string) => Promise<boolean>;
   removeContact: (taskId: string) => Promise<boolean>;
   createCalendarEvent: (taskId: string, draft: CalendarEventDraft) => Promise<boolean>;
+  refreshCalendarEvent: (taskId: string, requestAccess?: boolean) => Promise<boolean>;
+  deleteCalendarEvent: (taskId: string) => Promise<boolean>;
 };
 
 export const useTasksStore = create<TasksStore>()((set, get) => {
@@ -79,12 +81,25 @@ export const useTasksStore = create<TasksStore>()((set, get) => {
     }
   }
 
+  function changeCalendarEvent(taskId: string, action: 'refresh' | 'delete', requestAccess: boolean) {
+    const version = ownerVersion;
+    return mutate({ type: 'update', taskId }, async userId => {
+      if (!get().tasks.some(task => task.id === taskId && task.userId === userId)) {
+        throw new Error('No se encontró esa tarea entre tus tareas.');
+      }
+      return taskService.updateTaskCalendarEvent(userId, taskId, action, requestAccess, () => version === ownerVersion);
+    });
+  }
+
   return {
     userId: null,
     tasks: [],
     isLoading: false,
     loadError: null,
     mutation: null,
+
+    refreshCalendarEvent: (taskId, requestAccess = false) => changeCalendarEvent(taskId, 'refresh', requestAccess),
+    deleteCalendarEvent: taskId => changeCalendarEvent(taskId, 'delete', true),
 
     setOwner: userId => {
       ownerVersion += 1;

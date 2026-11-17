@@ -47,7 +47,7 @@ test.each<[DeviceResource, string]>([
   ['gallery', PERMISSIONS.IOS.PHOTO_LIBRARY],
   ['location', PERMISSIONS.IOS.LOCATION_WHEN_IN_USE],
   ['contacts', PERMISSIONS.IOS.CONTACTS],
-  ['calendar', PERMISSIONS.IOS.CALENDARS_WRITE_ONLY],
+  ['calendar', PERMISSIONS.IOS.CALENDARS],
 ])('consulta %s en iOS sin solicitarlo', async (resource, permission) => {
   expect(await checkResourcePermission(resource)).toBe('denied');
   expect(checkMultiple).toHaveBeenCalledWith([permission]);

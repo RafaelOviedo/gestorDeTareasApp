@@ -10,7 +10,7 @@
 {
   EKAuthorizationStatus status = [EKEventStore authorizationStatusForEntityType:EKEntityTypeEvent];
   if (@available(iOS 17.0, *)) {
-    return status == EKAuthorizationStatusWriteOnly || status == EKAuthorizationStatusFullAccess;
+    return status == EKAuthorizationStatusFullAccess;
   }
   return status == EKAuthorizationStatusAuthorized;
 }
@@ -23,11 +23,67 @@
       return;
     }
     EKEventStore *store = [[EKEventStore alloc] init];
-    // Con acceso de escritura iOS permite insertar en el calendario predeterminado,
-    // pero no leer la lista real de calendarios o sus eventos.
+    // La creación sigue usando el calendario predeterminado del dispositivo.
     resolve(store.defaultCalendarForNewEvents
       ? @[@{@"id": @"default", @"title": @"Calendario predeterminado"}]
       : @[]);
+  });
+}
+
+- (void)getEvent:(NSString *)eventId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (![self hasAccess]) {
+      reject(@"permission", @"Autorizá el acceso completo al calendario para verificar el evento.", nil);
+      return;
+    }
+    if (!eventId.length) {
+      reject(@"invalid", @"El identificador del evento no es válido.", nil);
+      return;
+    }
+    EKEventStore *store = [[EKEventStore alloc] init];
+    EKEvent *event = [store eventWithIdentifier:eventId];
+    if (!event) {
+      // No interpretar una revocación de permisos como un evento eliminado.
+      if (![self hasAccess]) {
+        reject(@"permission", @"El permiso de calendario cambió. Revisalo desde Ajustes.", nil);
+      } else {
+        resolve((id)kCFNull);
+      }
+      return;
+    }
+    resolve(@{
+      @"eventId": event.eventIdentifier,
+      @"calendarId": event.calendar.calendarIdentifier,
+      @"calendarName": event.calendar.title ?: @"Calendario",
+      @"startDate": @(event.startDate.timeIntervalSince1970 * 1000),
+      @"endDate": @(event.endDate.timeIntervalSince1970 * 1000)
+    });
+  });
+}
+
+- (void)deleteEvent:(NSString *)eventId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (![self hasAccess]) {
+      reject(@"permission", @"Autorizá el acceso completo al calendario para eliminar el evento.", nil);
+      return;
+    }
+    if (!eventId.length) {
+      reject(@"invalid", @"El identificador del evento no es válido.", nil);
+      return;
+    }
+    EKEventStore *store = [[EKEventStore alloc] init];
+    EKEvent *event = [store eventWithIdentifier:eventId];
+    NSError *error = nil;
+    if (![self hasAccess]) {
+      reject(@"permission", @"El permiso de calendario cambió. Revisalo desde Ajustes.", nil);
+    } else if (event && ![store removeEvent:event span:EKSpanThisEvent commit:YES error:&error]) {
+      reject(@"delete_failed", @"No se pudo eliminar el evento del calendario. Intentá nuevamente.", error);
+    } else {
+      // Repetir la eliminación es seguro si falló el guardado local después.
+      resolve(@YES);
+    }
   });
 }
 

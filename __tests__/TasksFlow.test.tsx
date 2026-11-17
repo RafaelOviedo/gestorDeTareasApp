@@ -107,6 +107,64 @@ test('cancelar la creación no guarda un vínculo ni crea un evento', async () =
   expect(NativeTaskCalendar!.createEvent).not.toHaveBeenCalled();
 });
 
+test('elimina el evento solo después de confirmar y conserva la tarea', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  await press('Agregar al calendario');
+  await press('Crear evento');
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  await press('Eliminar evento del calendario');
+  expect(NativeTaskCalendar!.deleteEvent).not.toHaveBeenCalled();
+  expect(alert.mock.calls[0][2]?.find(button => button.text === 'Cancelar')).toBeTruthy();
+  await act(async () => { alert.mock.calls[0][2]?.find(button => button.text === 'Eliminar evento')?.onPress?.(); });
+  expect(screen.getByText('Evento eliminado del calendario.')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Agregar al calendario' })).toBeVisible();
+  const tasks = await getTasks('user:ana');
+  expect(tasks).toHaveLength(1);
+  expect(tasks[0].calendarEvent).toBeNull();
+  await press('Agregar al calendario');
+  await press('Crear evento');
+  expect((await getTasks('user:ana'))[0].calendarEvent).not.toBeNull();
+  const calls = jest.mocked(NativeTaskCalendar!.createEvent).mock.calls;
+  expect(calls[0][0]).not.toBe(calls[1][0]);
+});
+
+test('al volver desde Calendario quita un evento eliminado afuera sin borrar la tarea', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  await press('Agregar al calendario');
+  const subscriptions = jest.spyOn(AppState, 'addEventListener');
+  await press('Crear evento');
+  const listener = subscriptions.mock.calls[subscriptions.mock.calls.length - 1][1];
+  jest.mocked(NativeTaskCalendar!.getEvent).mockResolvedValueOnce(null);
+  await act(async () => {
+    listener('background');
+    listener('active');
+  });
+  expect(screen.getByText('El evento ya no está disponible en Calendario. Se quitó el vínculo de esta tarea.')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Agregar al calendario' })).toBeVisible();
+  expect((await getTasks('user:ana'))[0].calendarEvent).toBeNull();
+});
+
+test('si falla verificar el evento conserva sus datos y permite actualizar manualmente', async () => {
+  await renderApp();
+  await login();
+  await createTask();
+  await press('Ver detalle: Repasar');
+  await press('Agregar al calendario');
+  jest.mocked(NativeTaskCalendar!.getEvent).mockRejectedValueOnce(new Error('No se pudo consultar el evento.'));
+  await press('Crear evento');
+  expect(screen.getByText('No se pudo consultar el evento.')).toBeVisible();
+  expect((await getTasks('user:ana'))[0].calendarEvent).not.toBeNull();
+  await press('Actualizar evento');
+  expect(screen.getByText('Evento actualizado desde el calendario.')).toBeVisible();
+  expect(screen.queryByText('No se pudo consultar el evento.')).toBeNull();
+});
+
 test('calendario informa rechazo y ausencia de calendarios, con ajustes y reintento', async () => {
   await renderApp();
   await login();

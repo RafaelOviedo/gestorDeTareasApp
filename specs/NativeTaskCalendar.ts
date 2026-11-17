@@ -12,6 +12,8 @@ export type SavedCalendarEvent = {
 
 export interface Spec extends TurboModule {
   getCalendars(): Promise<DeviceCalendar[]>;
+  getEvent(eventId: string): Promise<SavedCalendarEvent | null>;
+  deleteEvent(eventId: string): Promise<boolean>;
   createEvent(
     operationId: string,
     calendarId: string,

@@ -1,5 +1,6 @@
 import NativeTaskCalendar, {
   type DeviceCalendar,
+  type SavedCalendarEvent,
 } from '../../specs/NativeTaskCalendar';
 import type {
   CalendarEventDraft,
@@ -37,7 +38,7 @@ async function authorize(requestAccess: boolean) {
   }
   if (permission !== 'granted' && permission !== 'limited') {
     throw new CalendarError(
-      'No autorizaste el acceso al calendario. Podés reintentar o habilitarlo desde Ajustes.',
+      'Se necesita acceso completo al calendario para consultar y eliminar el evento. Pulsá Actualizar evento para autorizarlo o revisá el permiso en Ajustes.',
       true,
     );
   }
@@ -86,7 +87,11 @@ export async function createDeviceCalendarEvent(
   const startDate = Date.parse(draft.startAt);
   try {
     const saved = await calendar.createEvent(
-      JSON.stringify([task.userId, task.id]),
+      JSON.stringify(
+        task.calendarRevision
+          ? [task.userId, task.id, task.calendarRevision]
+          : [task.userId, task.id],
+      ),
       draft.calendarId,
       task.title,
       startDate,
@@ -96,19 +101,70 @@ export async function createDeviceCalendarEvent(
         ? `${task.location.latitude}, ${task.location.longitude}`
         : '',
     );
-    const event: TaskCalendarEvent = {
-      eventId: saved.eventId,
-      calendarId: saved.calendarId,
-      calendarName: saved.calendarName,
-      startAt: new Date(saved.startDate).toISOString(),
-      endAt: new Date(saved.endDate).toISOString(),
-    };
-    if (!isTaskCalendarEvent(event)) {
+    return toTaskEvent(saved);
+  } catch (cause) {
+    throw nativeError(cause);
+  }
+}
+
+function toTaskEvent(saved: SavedCalendarEvent): TaskCalendarEvent {
+  const event: TaskCalendarEvent = {
+    eventId: saved.eventId,
+    calendarId: saved.calendarId,
+    calendarName: saved.calendarName,
+    startAt: new Date(saved.startDate).toISOString(),
+    endAt: new Date(saved.endDate).toISOString(),
+  };
+  if (!isTaskCalendarEvent(event)) {
+    throw new Error(
+      'El calendario devolvió un resultado inválido. Revisá la app Calendario.',
+    );
+  }
+  return event;
+}
+
+export async function readDeviceCalendarEvent(
+  eventId: string,
+  requestAccess: boolean,
+  isCurrent: () => boolean,
+): Promise<TaskCalendarEvent | null | undefined> {
+  const calendar = await authorize(requestAccess);
+  if (!isCurrent()) {
+    return undefined;
+  }
+  if (typeof calendar.getEvent !== 'function') {
+    throw new CalendarError(
+      'Actualizá la aplicación para consultar los eventos del calendario.',
+    );
+  }
+  try {
+    const saved = await calendar.getEvent(eventId);
+    return saved === null ? null : toTaskEvent(saved);
+  } catch (cause) {
+    throw nativeError(cause);
+  }
+}
+
+export async function deleteDeviceCalendarEvent(
+  eventId: string,
+  isCurrent: () => boolean,
+): Promise<boolean> {
+  const calendar = await authorize(true);
+  if (!isCurrent()) {
+    return false;
+  }
+  if (typeof calendar.deleteEvent !== 'function') {
+    throw new CalendarError(
+      'Actualizá la aplicación para eliminar eventos del calendario.',
+    );
+  }
+  try {
+    if (!(await calendar.deleteEvent(eventId))) {
       throw new Error(
-        'El calendario devolvió un resultado inválido. Revisá la app Calendario.',
+        'No se pudo confirmar la eliminación del evento. Intentá nuevamente.',
       );
     }
-    return event;
+    return true;
   } catch (cause) {
     throw nativeError(cause);
   }

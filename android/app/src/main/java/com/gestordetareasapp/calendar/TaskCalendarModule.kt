@@ -66,6 +66,67 @@ class TaskCalendarModule(private val context: ReactApplicationContext) : NativeT
     }
   }
 
+  override fun getEvent(eventId: String, promise: Promise) {
+    executor.execute {
+      if (!hasAccess()) {
+        promise.reject("permission", "Autorizá el acceso al calendario para verificar el evento.")
+        return@execute
+      }
+      try {
+        val id = eventId.toLongOrNull() ?: throw IllegalArgumentException("Identificador inválido")
+        val uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)
+        val cursor = context.contentResolver.query(uri, arrayOf(
+          CalendarContract.Events.CALENDAR_ID, CalendarContract.Events.DTSTART,
+          CalendarContract.Events.DTEND, CalendarContract.Events.DELETED
+        ), null, null, null)
+        if (cursor == null) {
+          promise.reject("read_failed", "No se pudo consultar el evento. Intentá nuevamente.")
+          return@execute
+        }
+        cursor.use {
+          if (!it.moveToFirst() || it.getInt(3) != 0) {
+            if (!hasAccess()) {
+              promise.reject("permission", "El permiso de calendario cambió. Revisalo desde Ajustes.")
+            } else {
+              promise.resolve(null)
+            }
+          } else {
+            val calendarId = it.getLong(0).toString()
+            val calendarName = calendars().find { calendar -> calendar.first == calendarId }?.second ?: "Calendario"
+            val result = Arguments.createMap().apply {
+              putString("eventId", eventId)
+              putString("calendarId", calendarId)
+              putString("calendarName", calendarName)
+              putDouble("startDate", it.getLong(1).toDouble())
+              putDouble("endDate", it.getLong(2).toDouble())
+            }
+            promise.resolve(result)
+          }
+        }
+      } catch (error: Exception) {
+        promise.reject("read_failed", "No se pudo consultar el evento. Revisá el permiso de calendario.", error)
+      }
+    }
+  }
+
+  override fun deleteEvent(eventId: String, promise: Promise) {
+    executor.execute {
+      if (!hasAccess()) {
+        promise.reject("permission", "Autorizá el acceso al calendario para eliminar el evento.")
+        return@execute
+      }
+      try {
+        val id = eventId.toLongOrNull() ?: throw IllegalArgumentException("Identificador inválido")
+        context.contentResolver.delete(
+          ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id), null, null
+        )
+        promise.resolve(true)
+      } catch (error: Exception) {
+        promise.reject("delete_failed", "No se pudo eliminar el evento del calendario. Intentá nuevamente.", error)
+      }
+    }
+  }
+
   private fun asMap(event: JSONObject): WritableMap = Arguments.createMap().apply {
     putString("eventId", event.getString("eventId"))
     putString("calendarId", event.getString("calendarId"))

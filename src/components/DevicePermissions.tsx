@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Text, View } from 'react-native';
+import { AppState, Platform, Text, View } from 'react-native';
 import {
   checkResourcePermission,
   deviceResources,
@@ -24,7 +24,7 @@ const descriptions: Record<DeviceResource, string> = {
   gallery: 'Elegir una imagen para una tarea.',
   location: 'Obtener el lugar de una tarea mientras usás la app.',
   contacts: 'Elegir un contacto relacionado con una tarea.',
-  calendar: 'Crear un evento vinculado a una tarea.',
+  calendar: 'Crear, verificar y eliminar el evento vinculado a una tarea.',
 };
 type Entry = {
   status?: ResourcePermission;
@@ -174,6 +174,18 @@ export default function DevicePermissions() {
         Vos elegís qué accesos autorizar. Solo se solicitan cuando pulsás el
         botón correspondiente.
       </Text>
+      <Text style={styles.hint}>
+        Los botones de ajustes abren la configuración de Gestor de Tareas;
+        allí elegís el permiso que querés cambiar.
+      </Text>
+      {Platform.OS === 'ios' ? (
+        <Text style={styles.hint}>
+          Si Ajustes no muestra opciones, buscá Gestor de Tareas en Ajustes →
+          Apps, o revisá el recurso en Privacidad y seguridad. Los permisos
+          aparecen después de solicitarlos. La cámara debe probarse en un
+          iPhone físico; en el simulador podés usar la galería.
+        </Text>
+      ) : null}
       {deviceResources.map(resource => {
         const entry = entries[resource] ?? {};
         const canAsk = entry.status === 'denied';

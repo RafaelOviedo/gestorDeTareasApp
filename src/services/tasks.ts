@@ -7,7 +7,7 @@ import {
 } from './notifications';
 import type { Task, TaskDraft, TaskLocation, TaskContact, CalendarEventDraft } from '../types/task';
 import { isTaskCalendarEvent } from '../utils/calendar';
-import { createDeviceCalendarEvent } from './taskCalendar';
+import { createDeviceCalendarEvent, readDeviceCalendarEvent, deleteDeviceCalendarEvent } from './taskCalendar';
 import { isTaskContact } from '../utils/contacts';
 import { isTaskLocation } from '../utils/location';
 import { MAX_TASK_TITLE_LENGTH, validateTask } from '../utils/tasks';
@@ -57,6 +57,8 @@ function isTask(value: unknown, userId: string): value is StoredTask {
     (task.calendarEvent === undefined ||
       task.calendarEvent === null ||
       isTaskCalendarEvent(task.calendarEvent)) &&
+    (task.calendarRevision === undefined ||
+      (Number.isSafeInteger(task.calendarRevision) && task.calendarRevision >= 0 && task.calendarRevision < Number.MAX_SAFE_INTEGER)) &&
     isDate(task.createdAt) &&
     (task.reminderAt === null || isDate(task.reminderAt)) &&
     (task.notificationId === null || typeof task.notificationId === 'string')
@@ -356,6 +358,59 @@ export async function createTaskCalendarEvent(
       task,
       updated,
       'El evento se creó, pero no se pudo guardar el vínculo en la tarea. Reintentá para recuperar el vínculo sin crear otro evento.',
+    );
+    return updated;
+  });
+}
+
+export async function updateTaskCalendarEvent(
+  userId: string,
+  taskId: string,
+  action: 'refresh' | 'delete',
+  requestAccess: boolean,
+  isCurrent: () => boolean = () => true,
+): Promise<Task | void> {
+  return withTaskWrite(userId, async () => {
+    const tasks = await readTasks(userId);
+    const task = tasks.find(item => item.id === taskId);
+    if (!task) {
+      throw new Error('No se encontró esa tarea entre tus tareas.');
+    }
+    if (!isCurrent()) {
+      return;
+    }
+    if (!task.calendarEvent) {
+      return task;
+    }
+    let calendarEvent;
+    if (action === 'delete') {
+      if (!(await deleteDeviceCalendarEvent(task.calendarEvent.eventId, isCurrent))) {
+        return;
+      }
+      calendarEvent = null;
+    } else {
+      calendarEvent = await readDeviceCalendarEvent(task.calendarEvent.eventId, requestAccess, isCurrent);
+      if (calendarEvent === undefined || !isCurrent()) {
+        return;
+      }
+    }
+    const updated: Task = { ...task, calendarEvent };
+    if (calendarEvent === null) {
+      // Una nueva creación usa otra clave de operación: no recuperar un evento
+      // eliminado desde el registro nativo de reintentos.
+      updated.calendarRevision = (task.calendarRevision ?? 0) + 1;
+    }
+    if (JSON.stringify(task.calendarEvent) === JSON.stringify(calendarEvent)) {
+      return task;
+    }
+    await commitTaskChange(
+      userId,
+      tasks.map(item => item.id === taskId ? updated : item),
+      task,
+      updated,
+      action === 'delete'
+        ? 'El evento se eliminó del calendario, pero no se pudo actualizar la tarea. Pulsá Actualizar evento para recuperar el estado.'
+        : 'No se pudo guardar el estado del evento. Intentá actualizarlo nuevamente.',
     );
     return updated;
   });

@@ -27,7 +27,7 @@ function permissionsFor(resource: DeviceResource): Permission[] {
       location: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
       contacts: PERMISSIONS.IOS.CONTACTS,
       // El handler también utiliza la API anterior en iOS < 17.
-      calendar: PERMISSIONS.IOS.CALENDARS_WRITE_ONLY,
+      calendar: PERMISSIONS.IOS.CALENDARS,
     };
     return [permissions[resource]];
   }

@@ -38,6 +38,7 @@ export type Task = {
   location?: TaskLocation | null;
   contact?: TaskContact | null;
   calendarEvent?: TaskCalendarEvent | null;
+  calendarRevision?: number;
 };
 
 export type TaskDraft = {

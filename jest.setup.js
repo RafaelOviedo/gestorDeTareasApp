@@ -4,15 +4,24 @@ import mockSafeAreaContext from 'react-native-safe-area-context/jest/mock';
 
 jest.mock('react-native-safe-area-context', () => mockSafeAreaContext);
 
-jest.mock('./specs/NativeTaskCalendar', () => ({
-  __esModule: true,
-  default: {
-    getCalendars: jest.fn(async () => [{ id: 'default', title: 'Calendario predeterminado' }]),
-    createEvent: jest.fn(async (_operationId, calendarId, _title, startDate, endDate) => ({
-      eventId: 'event-1', calendarId, calendarName: 'Calendario predeterminado', startDate, endDate,
-    })),
-  },
-}));
+jest.mock('./specs/NativeTaskCalendar', () => {
+  const { beforeEach: resetBeforeTest } = require('@jest/globals');
+  const events = new Map();
+  resetBeforeTest(() => events.clear());
+  return {
+    __esModule: true,
+    default: {
+      getCalendars: jest.fn(async () => [{ id: 'default', title: 'Calendario predeterminado' }]),
+      createEvent: jest.fn(async (_operationId, calendarId, _title, startDate, endDate) => {
+        const event = { eventId: 'event-1', calendarId, calendarName: 'Calendario predeterminado', startDate, endDate };
+        events.set(event.eventId, event);
+        return event;
+      }),
+      getEvent: jest.fn(async id => events.get(id) ?? null),
+      deleteEvent: jest.fn(async id => { events.delete(id); return true; }),
+    },
+  };
+});
 
 jest.mock('@react-native-community/datetimepicker', () => {
   const { View } = require('react-native');

@@ -42,9 +42,9 @@
 	<key>NSContactsUsageDescription</key>
 	<string>Accedemos a los contactos que autorices para elegir una persona relacionada con una tarea.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Usamos el calendario para crear un evento vinculado a una tarea.</string>
-	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>Agregamos eventos al calendario para tus tareas, sin leer tus otros eventos.</string>
+	<string>Usamos el calendario para crear, consultar y eliminar los eventos vinculados a tus tareas.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Necesitamos acceso al calendario para comprobar cambios y eliminar los eventos vinculados a tus tareas.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

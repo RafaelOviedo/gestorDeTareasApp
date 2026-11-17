@@ -14,7 +14,7 @@ Cada tarea puede guardar su ubicación actual, con coordenadas, precisión estim
 
 También permite elegir un contacto de la agenda como persona relacionada con la tarea. Guarda su nombre y, si están disponibles, su primer teléfono y correo; se puede cambiar o quitar desde el detalle.
 
-Desde el detalle también podés crear un evento en el calendario del dispositivo, eligiendo fecha, hora y duración. La tarea conserva el vínculo y los datos del evento creado. Completar o eliminar la tarea conserva el evento; los cambios posteriores se hacen desde la app Calendario.
+Desde el detalle también podés crear un evento en el calendario del dispositivo, eligiendo fecha, hora y duración, y eliminarlo con confirmación. El vínculo y las fechas se verifican al abrir el detalle o volver desde Calendario: si el evento ya no está disponible, se quita de la tarea. Completar o eliminar la tarea conserva el evento; para borrarlo usá **Eliminar evento del calendario** antes de eliminar la tarea.
 
 ## Stack
 
@@ -86,7 +86,11 @@ Para guardar un lugar, pulsar **Usar ubicación actual** desde el detalle y acep
 
 Para asociar una persona, pulsar **Elegir contacto** desde el detalle, autorizar el acceso y seleccionar un contacto. En el simulador de iPhone podés crear contactos desde la app **Contactos**. Si autorizaste solo algunos contactos, podés cambiar esa selección desde Ajustes.
 
-Para agendar una tarea, pulsar **Agregar al calendario**, autorizar el permiso, elegir fecha, hora y duración y pulsar **Crear evento**. Luego verificarlo en la app Calendario. En iOS se usa el calendario predeterminado con permiso de escritura; en Android se puede elegir un calendario disponible. El dispositivo o simulador debe tener un calendario configurado que permita agregar eventos.
+Para agendar una tarea, pulsar **Agregar al calendario**, autorizar el permiso, elegir fecha, hora y duración y pulsar **Crear evento**. Luego verificarlo en la app Calendario. En iOS se usa el calendario predeterminado y se necesita acceso completo para consultar y eliminar eventos; en Android se puede elegir un calendario disponible. El dispositivo o simulador debe tener un calendario configurado que permita agregar eventos.
+
+Si antes autorizaste solo agregar eventos en iOS, pulsá **Actualizar evento** en el detalle para solicitar acceso completo. Las verificaciones automáticas no muestran diálogos de permisos. Si el acceso se rechaza o la consulta falla, se conservan los datos guardados y se informa el error. **Eliminar evento del calendario** elimina el evento y su vínculo, conservando la tarea y su recordatorio.
+
+Los botones de ajustes abren la configuración de la app. Si iOS no muestra opciones, buscá **Ajustes → Apps → Gestor de Tareas** o el recurso en **Privacidad y seguridad** después de haber solicitado el permiso. La cámara del simulador no sustituye una prueba en iPhone físico; usá la galería para la demostración en simulador.
 
 ### Verificación manual para la entrega
 
@@ -97,7 +101,8 @@ Después de compilar, realizar este recorrido en iOS y Android:
 3. Completar y volver a poner pendiente la tarea. Cerrar la app desde el selector de aplicaciones y abrirla: deben conservarse la sesión, la tarea y sus datos asociados.
 4. Cerrar sesión e ingresar con otra cuenta: la tarea anterior no debe aparecer. Volver a la primera cuenta y verificar que sigue guardada.
 5. Cuando el sistema solicite permiso para un recurso, rechazarlo, habilitarlo desde Ajustes y reintentar. Verificar los mensajes y que se pueda seguir usando la app. En Android, la galería usa el selector del sistema sin acceso amplio a las fotos; cancelar ese selector o la selección de contacto tampoco debe modificar la tarea.
-6. Quitar o reemplazar los datos adjuntos y eliminar la tarea. El evento debe conservarse en Calendario; eliminarlo allí al terminar la prueba.
+6. Cambiar la fecha del evento desde Calendario y volver al detalle: debe actualizarse. Borrarlo desde Calendario y volver: debe desaparecer el vínculo, conservando la tarea. Crear otro evento y probar **Eliminar evento del calendario**, primero cancelando y luego confirmando.
+7. Quitar o reemplazar los datos adjuntos y eliminar la tarea. Si todavía tenía un evento, este se conserva en Calendario y se puede borrar allí.
 
 Para repetir un diálogo de permiso, restablecer el permiso del recurso desde el sistema según el dispositivo. La cámara requiere un dispositivo físico; la ubicación, los contactos y el calendario necesitan los datos de prueba indicados arriba.
 
