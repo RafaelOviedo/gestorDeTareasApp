@@ -8,13 +8,13 @@ Las tareas pueden incluir recordatorios mediante notificaciones locales a los 10
 
 Desde **Ver detalle** se consultan los datos de cada tarea y se administran los permisos del dispositivo.
 
-También podés tomar una foto o elegirla desde la galería para adjuntarla a una tarea. Se muestra en la lista y en el detalle, se conserva al reiniciar la app y se puede reemplazar o quitar.
+También se puede tomar una foto o elegirla desde la galería para adjuntarla a una tarea. Se muestra en la lista y en el detalle, se conserva al reiniciar la app y se puede reemplazar o quitar.
 
 Cada tarea puede guardar su ubicación actual, con coordenadas, precisión estimada y fecha de captura. Se puede actualizar o quitar desde el detalle.
 
 También permite elegir un contacto de la agenda como persona relacionada con la tarea. Guarda su nombre y, si están disponibles, su primer teléfono y correo; se puede cambiar o quitar desde el detalle.
 
-Desde el detalle también podés crear un evento en el calendario del dispositivo, eligiendo fecha, hora y duración, y eliminarlo con confirmación. El vínculo y las fechas se verifican al abrir el detalle o volver desde Calendario: si el evento ya no está disponible, se quita de la tarea. Completar o eliminar la tarea conserva el evento; para borrarlo usá **Eliminar evento del calendario** antes de eliminar la tarea.
+Desde el detalle también se puede crear un evento en el calendario del dispositivo, eligiendo fecha, hora y duración, y eliminarlo con confirmación. El vínculo y las fechas se verifican al abrir el detalle o volver desde Calendario: si el evento ya no está disponible, se quita de la tarea. Completar o eliminar la tarea conserva el evento; para borrarlo, usar **Eliminar evento del calendario** antes de eliminar la tarea.
 
 ## Stack
 
@@ -30,6 +30,30 @@ Desde el detalle también podés crear un evento en el calendario del dispositiv
 - React Native Contacts para seleccionar contactos de la agenda.
 - Módulo nativo de calendario con EventKit (iOS) y Calendar Provider (Android), conectado a React Native mediante TurboModules. React Native Community DateTimePicker para elegir fecha y hora.
 - Jest y React Native Testing Library para los tests.
+
+## Uso de IA y metodología de trabajo — Parcial 2
+
+Para ampliar la aplicación del Parcial 1 se utilizó **Codex con el modelo Astra** como asistente de desarrollo. Se contó con su ayuda para analizar los requerimientos, elaborar el plan, implementar código, crear y ejecutar tests, documentar el proyecto y corregir problemas detectados durante las pruebas de la app.
+
+Se trabajó con un enfoque de **SDD (Spec Driven Development, o desarrollo guiado por especificaciones)**: se tomaron los requerimientos del documento de la consigna del parcial como especificación de lo que debía cumplir la aplicación. A partir de ellos se definió un plan por etapas con ayuda de Codex y se revisó antes de comenzar la implementación. Como punto de partida, se compartió la consigna en la conversación con Codex.
+
+Se mantuvo **React Native CLI, sin Expo**, una decisión acordada previamente con el profesor. Con ayuda de Codex se implementaron las funcionalidades solicitadas con alternativas compatibles con ese entorno y, para calendario, con un módulo nativo propio.
+
+### Plan de implementación
+
+La implementación se organizó en los siguientes siete pasos:
+
+1. **Estado global con Zustand:** migrar la gestión de tareas a un store con acciones para cargar, agregar, actualizar y eliminar, conservando la persistencia en AsyncStorage.
+2. **Permisos y detalle de tarea:** incorporar la pantalla de detalle y la gestión de permisos para cámara, galería, ubicación, contactos y calendario, contemplando rechazos y mensajes al usuario.
+3. **Cámara y galería:** permitir tomar o seleccionar una foto, asociarla a una tarea, conservarla en el dispositivo y mostrarla en la lista y el detalle.
+4. **Ubicación:** obtener la posición actual, asociarla a la tarea y mostrar sus coordenadas, precisión y fecha de captura.
+5. **Contactos:** seleccionar una persona de la agenda, guardar sus datos asociados a la tarea y permitir cambiarla o quitarla.
+6. **Calendario:** crear un evento vinculado a la tarea, con fecha, hora y duración, y guardar su vínculo.
+7. **Testing y documentación:** revisar el cumplimiento de los requerimientos, completar las pruebas automatizadas y documentar la instalación, ejecución y verificación manual.
+
+Con ayuda de Codex se incorporaron los tests y la documentación durante cada etapa, y se dedicó el último paso a consolidar esa revisión. Después se solicitaron ajustes a partir de las pruebas y los problemas observados, como mejorar el selector de fecha y hora e incorporar la eliminación y verificación de eventos del calendario.
+
+La definición del alcance, la revisión del plan y la decisión de avanzar entre etapas quedaron a cargo del alumno, al igual que la compilación y las comprobaciones visuales y nativas de la app. Estas comprobaciones se complementaron con los tests automatizados ejecutados con ayuda de Codex: utilizan mocks para las APIs del dispositivo y no reemplazan las pruebas en simulador o teléfono.
 
 ## Instalación y ejecución
 
@@ -80,17 +104,17 @@ npm run android
 
 Ejecutar los comandos sin `sudo`. Al abrir la app, registrar una cuenta e iniciar sesión. Para probar los recordatorios, crear una tarea con la opción **10 segundos** y aceptar el permiso de notificaciones; en Android, habilitar también Alarmas y recordatorios si la app lo solicita.
 
-Para adjuntar una foto, abrir **Ver detalle** en una tarea y pulsar **Tomar foto** o **Elegir de galería**. Para probar la cámara usá un dispositivo físico; en el simulador de iPhone podés probar la galería arrastrando una imagen al simulador.
+Para adjuntar una foto, abrir **Ver detalle** en una tarea y pulsar **Tomar foto** o **Elegir de galería**. Para probar la cámara, usar un dispositivo físico; en el simulador de iPhone se puede probar la galería arrastrando una imagen al simulador.
 
 Para guardar un lugar, pulsar **Usar ubicación actual** desde el detalle y aceptar el permiso. En el simulador de iPhone, seleccionar una ubicación simulada desde **Features → Location**; en un dispositivo físico, activar los servicios de ubicación.
 
-Para asociar una persona, pulsar **Elegir contacto** desde el detalle, autorizar el acceso y seleccionar un contacto. En el simulador de iPhone podés crear contactos desde la app **Contactos**. Si autorizaste solo algunos contactos, podés cambiar esa selección desde Ajustes.
+Para asociar una persona, pulsar **Elegir contacto** desde el detalle, autorizar el acceso y seleccionar un contacto. En el simulador de iPhone se pueden crear contactos desde la app **Contactos**. Si se autorizó el acceso solo a algunos contactos, se puede cambiar esa selección desde Ajustes.
 
 Para agendar una tarea, pulsar **Agregar al calendario**, autorizar el permiso, elegir fecha, hora y duración y pulsar **Crear evento**. Luego verificarlo en la app Calendario. En iOS se usa el calendario predeterminado y se necesita acceso completo para consultar y eliminar eventos; en Android se puede elegir un calendario disponible. El dispositivo o simulador debe tener un calendario configurado que permita agregar eventos.
 
-Si antes autorizaste solo agregar eventos en iOS, pulsá **Actualizar evento** en el detalle para solicitar acceso completo. Las verificaciones automáticas no muestran diálogos de permisos. Si el acceso se rechaza o la consulta falla, se conservan los datos guardados y se informa el error. **Eliminar evento del calendario** elimina el evento y su vínculo, conservando la tarea y su recordatorio.
+Si antes se autorizó solo agregar eventos en iOS, pulsar **Actualizar evento** en el detalle para solicitar acceso completo. Las verificaciones automáticas no muestran diálogos de permisos. Si el acceso se rechaza o la consulta falla, se conservan los datos guardados y se informa el error. **Eliminar evento del calendario** elimina el evento y su vínculo, conservando la tarea y su recordatorio.
 
-Los botones de ajustes abren la configuración de la app. Si iOS no muestra opciones, buscá **Ajustes → Apps → Gestor de Tareas** o el recurso en **Privacidad y seguridad** después de haber solicitado el permiso. La cámara del simulador no sustituye una prueba en iPhone físico; usá la galería para la demostración en simulador.
+Los botones de ajustes abren la configuración de la app. Si iOS no muestra opciones, buscar **Ajustes → Apps → Gestor de Tareas** o el recurso en **Privacidad y seguridad** después de haber solicitado el permiso. La cámara del simulador no sustituye una prueba en iPhone físico; usar la galería para la demostración en simulador.
 
 ### Verificación manual para la entrega
 
